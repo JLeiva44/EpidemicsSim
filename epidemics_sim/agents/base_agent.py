@@ -1,5 +1,23 @@
+
+
+from enum import Enum
+
+class State(Enum):
+    SUSCEPTIBLE = 0
+    INFECTED = 1
+    RECOVERED = 2
+    DECEASED = 3
+    DIAGNOSED = 4
+    ASYMPTOMATIC = 5
+    SYMPTOMATIC = 6
+    SEVERE = 7
+    CRITICAL = 8
+    RECOVERED_IMMUNE = 9
+
+
+
 class BaseAgent:
-    def __init__(self, agent_id, initial_state, attributes=None):
+    def __init__(self, agent_id, initial_state = State.SUSCEPTIBLE, attributes=None):
         """
         Base class for an agent in the simulation.
 

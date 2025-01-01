@@ -1,8 +1,10 @@
 from epidemics_sim.agents.base_agent import BaseAgent
+from epidemics_sim.agents.base_agent import State
+
 class HumanAgent(BaseAgent):
     def __init__(
         self, agent_id, initial_state, age, gender, occupation, household_id,
-        comorbidities=None, infection_status=None, attributes=None
+        comorbidities=None, infection_status=State.SUSCEPTIBLE, attributes=None
     ):
         """
         Represents a human agent with attributes relevant for epidemic simulations.
@@ -25,6 +27,34 @@ class HumanAgent(BaseAgent):
         self.comorbidities = comorbidities or []
         self.infection_status = infection_status
 
+    @property
+    def is_infected(self):
+        """
+        Determine if the agent is infected based on the infection status.
+        """
+        return self.infection_status == State.INFECTED
+    
+    @property
+    def is_recovered(self):
+        """
+        Determine if the agent is recovered based on the infection status.
+        """
+        return self.infection_status == State.RECOVERED
+    
+    @property
+    def is_deceased(self):
+        """
+        Determine if the agent is deceased based on the infection status.
+        """
+        return self.infection_status == State.DECEASED  
+    
+    @property
+    def medical_age(self):
+        """
+        Determine the medical age of the agent based on age and comorbidities.
+        """
+        return self.age + 5*len(self.comorbidities)
+    
     def is_high_risk(self):
         """
         Determine if the agent is high-risk based on age and comorbidities.

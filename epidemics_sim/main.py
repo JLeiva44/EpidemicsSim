@@ -1,4 +1,4 @@
-from synthethic_population import SyntheticPopulationGenerator
+from simulation.microsimulation.synthethic_population import SyntheticPopulationGenerator
 # from microsimulation.population_cluster import PopulationCluster
 # from microsimulation.disease_propagation import DiseasePropagation
 # from microsimulation.analysis import SimulationAnalyzer
