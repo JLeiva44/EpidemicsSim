@@ -1,6 +1,7 @@
 from epidemics_sim.agents.human_agent import HumanAgent
 import random
 
+#TODO: Se esta asignando como estudiantes a los ninos de 2 y 3 anos ARREGLAR
 class SyntheticPopulationGenerator:
     def __init__(self,demographics):
         """
@@ -19,8 +20,8 @@ class SyntheticPopulationGenerator:
         :return: A tuple containing households and agents.
         """
         agents = self._generate_agents()
-        households = self._generate_households(agents)
-        return households, agents
+        #households = self._generate_households(agents)
+        return agents
 
     def _generate_agents(self):
         """
@@ -35,8 +36,8 @@ class SyntheticPopulationGenerator:
             occupation = self._generate_occupation(age)
             comorbidities = self._generate_comorbidities(age, gender)
 
-            agent = HumanAgent(
-                agent_id, None, age, gender, occupation, None, comorbidities, None, None
+            agent = HumanAgent( # id, age, gender, occupation, household_id, infection_status, comorbidities=[], attributes={},initial_state=State.SUSCEPTIBLE
+                agent_id, age,gender, occupation, None,None, comorbidities
             )
 
             agents.append(agent)

@@ -3,8 +3,8 @@ from epidemics_sim.agents.base_agent import State
 
 class HumanAgent(BaseAgent):
     def __init__(
-        self, agent_id, initial_state, age, gender, occupation, household_id,
-        comorbidities=None, infection_status=State.SUSCEPTIBLE, attributes=None
+        self, agent_id, age, gender, occupation, household_id, infection_status,
+        comorbidities=[], attributes={},initial_state=State.SUSCEPTIBLE
     ):
         """
         Represents a human agent with attributes relevant for epidemic simulations.

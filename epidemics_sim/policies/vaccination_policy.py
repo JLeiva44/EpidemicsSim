@@ -1,5 +1,5 @@
 from .base_policy import Policy
-
+import random
 class VaccinationPolicy(Policy):
     def __init__(self, vaccination_rate):
         """

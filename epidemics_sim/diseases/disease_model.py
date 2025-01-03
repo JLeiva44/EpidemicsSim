@@ -1,5 +1,6 @@
 import random
 import networkx as nx
+from epidemics_sim.logger import logger
 
 #TODO mortalityreate?
 class DiseaseModel:
@@ -21,7 +22,9 @@ class DiseaseModel:
 
         :param daily_interactions: Dictionary of interactions per cluster.
         """
-        for cluster_type, interactions in daily_interactions.items():
+        
+        for cluster_type, interactions in daily_interactions.items(): #daily_interactions.items():
+            logger.debug(interactions)
             for graph, duration in interactions:
                 self._process_graph(graph, duration)
 
