@@ -26,6 +26,9 @@ class HumanAgent(BaseAgent):
         self.household_id = household_id
         self.comorbidities = comorbidities or []
         self.infection_status = infection_status
+        self.vaccinated = False  # True if vaccinated
+        self.mask_usage = False  # True if wearing a mask
+        self.immune = False  # True if immune (from recovery or vaccination)
 
     @property
     def is_infected(self):
