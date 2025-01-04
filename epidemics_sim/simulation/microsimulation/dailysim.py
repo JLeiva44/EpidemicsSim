@@ -1,24 +1,44 @@
 import random
 import networkx as nx
+from city_cluster import CityClusterGenerator
 
 class DailySimulation:
-    def __init__(self, agents, clusters, transport, config, disease_model, policies):
+    def __init__(self, agents, cluster_generator, transport, config, disease_model, policies):
         """
         Initialize the daily simulation controller.
 
         :param agents: List of agents in the simulation.
-        :param clusters: Dictionary of clusters (home, work, school, shopping).
+        :param cluster_generator: Instance of CityClusterGenerator to create clusters dynamically.
         :param transport: Transport interaction handler.
         :param config: Configuration dictionary for the simulation.
         :param disease_model: Model handling the disease propagation.
         :param policies: List of active health policies.
         """
         self.agents = agents
-        self.clusters = clusters
+        self.cluster_generator = cluster_generator
         self.transport = transport
         self.config = config
         self.disease_model = disease_model
         self.policies = policies
+        self.clusters = self._generate_clusters()
+
+    def _generate_clusters(self):
+        """
+        Generate clusters dynamically using the cluster generator.
+
+        :return: A dictionary of generated clusters.
+        """
+        home_clusters = self.cluster_generator.generate_home_clusters(self.agents)
+        work_clusters = self.cluster_generator.generate_work_clusters(self.agents[:len(self.agents) // 2])
+        school_clusters = self.cluster_generator.generate_school_clusters(self.agents[len(self.agents) // 2:])
+        shopping_clusters = self.cluster_generator.generate_shopping_clusters(self.agents)
+
+        return {
+            "home": home_clusters,
+            "work": work_clusters,
+            "school": school_clusters,
+            "shopping": shopping_clusters
+        }
 
     def simulate(self, days):
         """
@@ -79,16 +99,15 @@ class DailySimulation:
 
     def _simulate_cluster_interactions(self, cluster_list):
         """
-        Simulate interactions within a list of clusters.
+        Simulate interactions within a list of clusters and their subclusters.
 
         :param cluster_list: List of clusters to simulate.
-        :return: List of interactions within the clusters.
+        :return: List of interactions within the clusters and subclusters.
         """
         interactions = []
         for cluster in cluster_list:
-            graph = cluster.generate_graph()
-            duration = cluster.get_contact_duration()
-            interactions.append((graph, duration))
+            subcluster_interactions = cluster.simulate_interactions()
+            interactions.extend(subcluster_interactions)
         return interactions
 
     def _apply_policies(self):
@@ -105,30 +124,25 @@ example_config = {
     "school": {"duration_mean": 300, "duration_std": 60},
     "shopping": {"duration_mean": 37, "duration_std": 10, "max_agents": 50},
     "transport": {"interval": 5, "duration_mean": 15, "duration_std": 5},
+    "household_sizes": [1, 2, 3, 4, 5, 6],
+    "household_distribution": [0.1, 0.2, 0.3, 0.2, 0.15, 0.05],
+    "work_sizes": [5, 10, 20, 50],
+    "work_distribution": [0.4, 0.3, 0.2, 0.1],
+    "school_sizes": [20, 30, 40],
+    "school_distribution": [0.5, 0.3, 0.2],
+    "shopping_centers": 5
 }
 
-# Example usage
 if __name__ == "__main__":
-    from clusters import HomeCluster, WorkCluster, SchoolCluster, ShoppingCluster
-    from transport import TransportInteraction
-    from disease import DiseaseModel
+    from population_clusters import TransportInteraction
+    from epidemics_sim.diseases.disease_model import DiseaseModel
     from policies import LockdownPolicy, SocialDistancingPolicy
 
     # Example agents
-    agents = [f"Agent_{i}" for i in range(100)]
+    agents = [f"Agent_{i}" for i in range(200)]
 
-    # Create clusters
-    home_clusters = [HomeCluster(agents[i:i + 5], example_config["home"]) for i in range(0, 20, 5)]
-    work_clusters = [WorkCluster(agents[i:i + 10], example_config["work"]) for i in range(20, 50, 10)]
-    school_clusters = [SchoolCluster(agents[i:i + 10], example_config["school"]) for i in range(50, 80, 10)]
-    shopping_clusters = [ShoppingCluster(agents[i:i + 10], example_config["shopping"]) for i in range(80, 100, 10)]
-
-    clusters = {
-        "home": home_clusters,
-        "work": work_clusters,
-        "school": school_clusters,
-        "shopping": shopping_clusters
-    }
+    # Create city cluster generator
+    cluster_generator = CityClusterGenerator(example_config)
 
     # Transport interactions
     transport_interaction = TransportInteraction(agents, example_config["transport"])
@@ -140,6 +154,6 @@ if __name__ == "__main__":
     policies = [LockdownPolicy(), SocialDistancingPolicy()]
 
     # Daily simulation
-    simulation = DailySimulation(agents, clusters, transport_interaction, example_config, disease_model, policies)
+    simulation = DailySimulation(agents, cluster_generator, transport_interaction, example_config, disease_model, policies)
     simulation_results = simulation.simulate(days=10)
     print("Simulation Results Summary:", simulation_results)
