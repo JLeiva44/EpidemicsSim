@@ -1,6 +1,5 @@
 import random
-import networkx as nx
-from city_cluster import CityClusterGenerator
+from city_cluster_generator import CityClusterGenerator
 
 class DailySimulation:
     def __init__(self, agents, cluster_generator, transport, config, disease_model, policies):
@@ -61,41 +60,62 @@ class DailySimulation:
 
     def simulate_day(self):
         """
-        Simulate a single day of interactions.
+        Simulate a single day of interactions, ordered by time intervals.
 
         :return: A summary of interactions for the day.
         """
         daily_interactions = {
-            "home": [],
-            "work": [],
-            "school": [],
-            "shopping": [],
-            "transport": []
+            "6-8am": self._simulate_morning(),
+            "8am-5pm": self._simulate_daytime(),
+            "5-8pm": self._simulate_evening(),
+            "8pm-6am": self._simulate_night()
         }
-
-        # Apply health policies
-        self._apply_policies()
-
-        # Simulate home interactions
-        daily_interactions["home"] = self._simulate_cluster_interactions(self.clusters["home"])
-
-        # Simulate work interactions
-        daily_interactions["work"] = self._simulate_cluster_interactions(self.clusters["work"])
-
-        # Simulate school interactions
-        daily_interactions["school"] = self._simulate_cluster_interactions(self.clusters["school"])
-
-        # Simulate shopping interactions
-        daily_interactions["shopping"] = self._simulate_cluster_interactions(self.clusters["shopping"])
-
-        # Simulate transport interactions
-        transport_interactions = self.transport.simulate_transport()
-        daily_interactions["transport"].extend(transport_interactions)
 
         # Propagate disease based on interactions
         self.disease_model.propagate(daily_interactions)
 
         return daily_interactions
+
+    def _simulate_morning(self):
+        """
+        Simulate interactions in the morning (6-8am): Home and transport.
+
+        :return: A list of interactions for the morning.
+        """
+        interactions = []
+        interactions.extend(self._simulate_cluster_interactions(self.clusters["home"]))
+        interactions.extend(self.transport.simulate_transport())
+        return interactions
+
+    def _simulate_daytime(self):
+        """
+        Simulate interactions during the day (8am-5pm): Work and school.
+
+        :return: A list of interactions for the daytime.
+        """
+        interactions = []
+        interactions.extend(self._simulate_cluster_interactions(self.clusters["work"]))
+        interactions.extend(self._simulate_cluster_interactions(self.clusters["school"]))
+        return interactions
+
+    def _simulate_evening(self):
+        """
+        Simulate interactions in the evening (5-8pm): Transport and shopping.
+
+        :return: A list of interactions for the evening.
+        """
+        interactions = []
+        interactions.extend(self.transport.simulate_transport())
+        interactions.extend(self._simulate_cluster_interactions(self.clusters["shopping"]))
+        return interactions
+
+    def _simulate_night(self):
+        """
+        Simulate interactions at night (8pm-6am): Home only.
+
+        :return: A list of interactions for the night.
+        """
+        return self._simulate_cluster_interactions(self.clusters["home"])
 
     def _simulate_cluster_interactions(self, cluster_list):
         """
@@ -134,8 +154,8 @@ example_config = {
 }
 
 if __name__ == "__main__":
-    from population_clusters import TransportInteraction
-    from epidemics_sim.diseases.disease_model import DiseaseModel
+    from clusters import TransportInteraction
+    from disease import DiseaseModel
     from policies import LockdownPolicy, SocialDistancingPolicy
 
     # Example agents
