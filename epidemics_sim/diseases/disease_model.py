@@ -1,75 +1,72 @@
 import random
-import networkx as nx
-from epidemics_sim.logger import logger
 
 class DiseaseModel:
-    def __init__(self, agents, transmission_rate, recovery_rate, mortality_rate, states):
+    def __init__(self, agents, transmission_rate, recovery_rate, mortality_rate):
         """
-        Base model for disease propagation.
+        Base class for disease models.
 
         :param agents: List of agents in the simulation.
-        :param transmission_rate: Probability of disease transmission per contact.
+        :param transmission_rate: Probability of transmission per contact.
         :param recovery_rate: Probability of recovery per day.
-        :param mortality_rate: Base probability of death per day for infected agents.
-        :param states: List of possible health states (e.g., susceptible, infected, recovered, deceased).
+        :param mortality_rate: Probability of death if in critical condition.
         """
         self.agents = agents
         self.transmission_rate = transmission_rate
         self.recovery_rate = recovery_rate
         self.mortality_rate = mortality_rate
-        self.states = states
 
     def propagate(self, daily_interactions):
         """
-        Propagate the disease based on daily interactions.
+        Handle the propagation of the disease based on interactions.
 
-        :param daily_interactions: Dictionary of interactions per cluster.
+        :param daily_interactions: Dictionary of daily interactions by time intervals.
         """
-        for cluster_type, interactions in daily_interactions.items():
+        for time_interval, interactions in daily_interactions.items():
             for graph, duration in interactions:
-                self._process_graph(graph, duration)
+                self._evaluate_transmission(graph, duration)
 
-    def update_states(self):
+    def _evaluate_transmission(self, graph, duration):
         """
-        Update agent health states, including recovery and mortality.
-        """
-        raise NotImplementedError("This method should be implemented in subclasses.")
+        Evaluate transmission of the disease in a graph.
 
-    def _process_graph(self, graph, duration):
-        """
-        Process interactions within a graph to propagate the disease.
-
-        :param graph: A NetworkX graph representing interactions.
-        :param duration: Duration of interactions in the graph.
+        :param graph: Interaction graph.
+        :param duration: Duration of the contact.
         """
         for edge in graph.edges:
             agent1 = graph.nodes[edge[0]]['agent']
             agent2 = graph.nodes[edge[1]]['agent']
-            self._evaluate_transmission(agent1, agent2, duration)
 
-    def _evaluate_transmission(self, agent1, agent2, duration):
+            if agent1.is_infected and agent2.infection_status["state"] == "susceptible" and not agent2.immune:
+                self._attempt_infection(agent2, duration)
+
+            elif agent2.is_infected and agent1.infection_status["state"] == "susceptible" and not agent1.immune:
+                self._attempt_infection(agent1, duration)
+
+    def _attempt_infection(self, agent, duration):
         """
-        Evaluate transmission between two agents based on their states and contact duration.
+        Attempt to infect an agent based on contact duration.
 
-        :param agent1: First agent in the interaction.
-        :param agent2: Second agent in the interaction.
-        :param duration: Duration of the contact.
+        :param agent: Susceptible agent.
+        :param duration: Duration of contact.
         """
-        raise NotImplementedError("This method should be implemented in subclasses.")
+        probability = self.transmission_rate * (duration / 60)
+        if random.random() < probability:
+            agent.infection_status["state"] = "infected"
 
+    def update_states(self):
+        """
+        Update the state of all agents, progressing infections.
+        """
+        for agent in self.agents:
+            if agent.is_infected:
+                agent.progress_infection(self._determine_severity, self.mortality_rate)
 
-# def propagate(self, daily_interactions):
-    #     """
-    #     Propagate the disease based on daily interactions.
+    def _determine_severity(self):
+        """
+        Determine the severity of the disease for an infected agent.
 
-    #     :param daily_interactions: Dictionary of interactions per cluster.
-    #     """
-    #     for cluster_type, interactions in daily_interactions.items():
-    #         logger.debug(interactions)
-    #         for interaction in interactions:
-    #             if isinstance(interaction, tuple) and len(interaction) == 2:
-    #                 graph, duration = interaction
-    #                 self._process_graph(graph, duration)
-    #             else:
-    #                 logger.error(f"Invalid interaction format: {interaction}")
-
+        :return: Severity level ('mild', 'moderate', 'severe', 'critical').
+        """
+        severity_levels = ["mild", "moderate", "severe", "critical"]
+        probabilities = [0.6, 0.25, 0.1, 0.05]
+        return random.choices(severity_levels, probabilities)[0]

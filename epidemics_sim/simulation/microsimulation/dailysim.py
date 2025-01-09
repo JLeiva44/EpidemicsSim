@@ -1,8 +1,10 @@
 import random
 from city_cluster_generator import CityClusterGenerator
+from healthcare_system import HealthcareSystem
+from simulation_analyzer import SimulationAnalyzer
 
 class DailySimulation:
-    def __init__(self, agents, cluster_generator, transport, config, disease_model, policies):
+    def __init__(self, agents, cluster_generator, transport, config, disease_model, policies, healthcare_system, analyzer):
         """
         Initialize the daily simulation controller.
 
@@ -12,6 +14,8 @@ class DailySimulation:
         :param config: Configuration dictionary for the simulation.
         :param disease_model: Model handling the disease propagation.
         :param policies: List of active health policies.
+        :param healthcare_system: Instance of the HealthcareSystem to manage healthcare.
+        :param analyzer: Instance of SimulationAnalyzer to track statistics.
         """
         self.agents = agents
         self.cluster_generator = cluster_generator
@@ -19,6 +23,8 @@ class DailySimulation:
         self.config = config
         self.disease_model = disease_model
         self.policies = policies
+        self.healthcare_system = healthcare_system
+        self.analyzer = analyzer
         self.clusters = self._generate_clusters()
 
     def _generate_clusters(self):
@@ -55,6 +61,21 @@ class DailySimulation:
 
             # Update disease progression based on daily interactions
             self.disease_model.update_states()
+
+            # Notify the healthcare system about new infections or changes
+            for agent in self.agents:
+                if agent.is_infected and not self.healthcare_system.is_registered(agent):
+                    self.healthcare_system.notify_infection(agent)
+
+            # Perform daily healthcare operations
+            self.healthcare_system.daily_operations()
+
+            # Record daily statistics
+            self.analyzer.record_daily_stats(self.agents, self.healthcare_system)
+
+        # Generate and plot the final report
+        report = self.analyzer.generate_report()
+        self.analyzer.plot_statistics()
 
         return simulation_results
 
@@ -173,7 +194,19 @@ if __name__ == "__main__":
     # Active policies
     policies = [LockdownPolicy(), SocialDistancingPolicy()]
 
+    # Healthcare system
+    municipalities = {
+        "Municipio1": {"num_consultorios": 10, "num_policlinicos": 3, "num_hospitals": 1},
+        "Municipio2": {"num_consultorios": 8, "num_policlinicos": 2, "num_hospitals": 1},
+    }
+    recovery_rates = {"consultorio": 0.8, "policlinico": 0.6, "hospital": 0.4}
+    mortality_rates = {"consultorio": 0.1, "policlinico": 0.3, "hospital": 0.5}
+    healthcare_system = HealthcareSystem(municipalities, recovery_rates, mortality_rates)
+
+    # Simulation analyzer
+    analyzer = SimulationAnalyzer()
+
     # Daily simulation
-    simulation = DailySimulation(agents, cluster_generator, transport_interaction, example_config, disease_model, policies)
+    simulation = DailySimulation(agents, cluster_generator, transport_interaction, example_config, disease_model, policies, healthcare_system, analyzer)
     simulation_results = simulation.simulate(days=10)
     print("Simulation Results Summary:", simulation_results)
