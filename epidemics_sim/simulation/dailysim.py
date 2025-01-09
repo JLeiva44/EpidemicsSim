@@ -174,39 +174,39 @@ example_config = {
     "shopping_centers": 5
 }
 
-if __name__ == "__main__":
-    from clusters import TransportInteraction
-    from disease import DiseaseModel
-    from policies import LockdownPolicy, SocialDistancingPolicy
+# if __name__ == "__main__":
+#     from clusters import TransportInteraction
+#     from disease import DiseaseModel
+#     from policies import LockdownPolicy, SocialDistancingPolicy
 
-    # Example agents
-    agents = [f"Agent_{i}" for i in range(200)]
+#     # Example agents
+#     agents = [f"Agent_{i}" for i in range(200)]
 
-    # Create city cluster generator
-    cluster_generator = CityClusterGenerator(example_config)
+#     # Create city cluster generator
+#     cluster_generator = CityClusterGenerator(example_config)
 
-    # Transport interactions
-    transport_interaction = TransportInteraction(agents, example_config["transport"])
+#     # Transport interactions
+#     transport_interaction = TransportInteraction(agents, example_config["transport"])
 
-    # Disease model
-    disease_model = DiseaseModel()
+#     # Disease model
+#     disease_model = DiseaseModel()
 
-    # Active policies
-    policies = [LockdownPolicy(), SocialDistancingPolicy()]
+#     # Active policies
+#     policies = [LockdownPolicy(), SocialDistancingPolicy()]
 
-    # Healthcare system
-    municipalities = {
-        "Municipio1": {"num_consultorios": 10, "num_policlinicos": 3, "num_hospitals": 1},
-        "Municipio2": {"num_consultorios": 8, "num_policlinicos": 2, "num_hospitals": 1},
-    }
-    recovery_rates = {"consultorio": 0.8, "policlinico": 0.6, "hospital": 0.4}
-    mortality_rates = {"consultorio": 0.1, "policlinico": 0.3, "hospital": 0.5}
-    healthcare_system = HealthcareSystem(municipalities, recovery_rates, mortality_rates)
+#     # Healthcare system
+#     municipalities = {
+#         "Municipio1": {"num_consultorios": 10, "num_policlinicos": 3, "num_hospitals": 1},
+#         "Municipio2": {"num_consultorios": 8, "num_policlinicos": 2, "num_hospitals": 1},
+#     }
+#     recovery_rates = {"consultorio": 0.8, "policlinico": 0.6, "hospital": 0.4}
+#     mortality_rates = {"consultorio": 0.1, "policlinico": 0.3, "hospital": 0.5}
+#     healthcare_system = HealthcareSystem(municipalities, recovery_rates, mortality_rates)
 
-    # Simulation analyzer
-    analyzer = SimulationAnalyzer()
+#     # Simulation analyzer
+#     analyzer = SimulationAnalyzer()
 
-    # Daily simulation
-    simulation = DailySimulation(agents, cluster_generator, transport_interaction, example_config, disease_model, policies, healthcare_system, analyzer)
-    simulation_results = simulation.simulate(days=10)
-    print("Simulation Results Summary:", simulation_results)
+#     # Daily simulation
+#     simulation = DailySimulation(agents, cluster_generator, transport_interaction, example_config, disease_model, policies, healthcare_system, analyzer)
+#     simulation_results = simulation.simulate(days=10)
+#     print("Simulation Results Summary:", simulation_results)
