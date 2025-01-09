@@ -46,14 +46,14 @@ class ClusterWithSubclusters:
         self.agents = agents
         self.subclusters = []
         self.config = config
+        self.subcluster_type = subcluster_type
 
-        self._generate_subclusters(subcluster_type, subcluster_config_key)
+        self._generate_subclusters(subcluster_config_key)
 
-    def _generate_subclusters(self, subcluster_type, subcluster_config_key):
+    def _generate_subclusters(self, subcluster_config_key):
         """
         Generate subclusters for this cluster based on configuration.
 
-        :param subcluster_type: Type of subcluster (e.g., "company", "school").
         :param subcluster_config_key: Key in the configuration for subcluster parameters.
         """
         subcluster_sizes = self.config[subcluster_config_key].get("size_ranges", [])
@@ -82,7 +82,6 @@ class ClusterWithSubclusters:
             duration = subcluster.get_contact_duration()
             interactions.append((graph, duration))
         return interactions
-
 
 # Example Configuration
 example_config = {

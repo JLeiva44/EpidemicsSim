@@ -1,6 +1,6 @@
-from city_cluster_generator import CityClusterGenerator
-from daily_simulation_subclusters import DailySimulation
-from simulation_analyzer import SimulationAnalyzer
+from city_cluster import CityClusterGenerator
+from dailysim import DailySimulation
+from analyzer import SimulationAnalyzer
 
 class SimulationController:
     def __init__(self, demographics, config, disease_model_class, policies, simulation_days):
