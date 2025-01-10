@@ -9,7 +9,6 @@ class SyntheticPopulationGenerator:
         :param demographics: Dictionary with demographic data (e.g., age distribution, gender ratio).
         """
         self.demographics = demographics
-        self.num_agents = demographics.get("total_population", 100)
 
     def generate_population(self):
         """
@@ -28,17 +27,18 @@ class SyntheticPopulationGenerator:
         :return: A list of agents.
         """
         agents = []
-        for agent_id in range(self.num_agents):
-            age = self._generate_age()
-            gender = self._generate_gender()
-            occupation = self._generate_occupation(age)
-            municipio = self._generate_municipio()
-            comorbidities = self._generate_comorbidities(age, gender, municipio)
+        for municipio, data in self.demographics["municipios"].items():
+            num_agents = data["poblacion_total"]
+            for agent_id in range(num_agents):
+                age = self._generate_age(data["distribucion_edad"])
+                gender = self._generate_gender()
+                occupation = self._generate_occupation(age)
+                comorbidities = self._generate_comorbidities(age, gender, municipio)
 
-            agent = HumanAgent(
-                agent_id, age, gender, occupation, None, municipio, None, comorbidities
-            )
-            agents.append(agent)
+                agent = HumanAgent(
+                    agent_id, age, gender, occupation, None, municipio, None, comorbidities
+                )
+                agents.append(agent)
         return agents
 
     def _assign_households(self, agents):
@@ -47,19 +47,15 @@ class SyntheticPopulationGenerator:
 
         :param agents: List of agents.
         """
-        household_sizes_by_municipio = self.demographics.get("household_size_distribution_by_municipio", {})
-        household_probabilities_by_municipio = self.demographics.get("household_size_probabilities_by_municipio", {})
-        num_households_by_municipio = self.demographics.get("households_by_municipio", {})
-
-        for municipio, num_households in num_households_by_municipio.items():
+        for municipio, data in self.demographics["municipios"].items():
             municipio_agents = [agent for agent in agents if agent.municipio == municipio]
             households = []
             unassigned_agents = municipio_agents.copy()
 
-            household_sizes = household_sizes_by_municipio.get(municipio, [1, 2, 3, 4, 5, 6, 7])
-            size_probabilities = household_probabilities_by_municipio.get(municipio, [0.3, 0.25, 0.2, 0.15, 0.05, 0.03, 0.02])
+            household_sizes = list(data["hogares_por_tamano"].keys())
+            size_probabilities = list(data["hogares_por_tamano"].values())
 
-            while len(households) < num_households and unassigned_agents:
+            while unassigned_agents:
                 size = random.choices(household_sizes, size_probabilities)[0]
                 size = min(size, len(unassigned_agents))
 
@@ -87,22 +83,11 @@ class SyntheticPopulationGenerator:
         :param municipio: Municipality of the agent.
         :return: A dictionary of comorbidities for an agent.
         """
-        municipio_comorbidities = self.demographics.get("comorbidity_distribution_by_municipio", {}).get(municipio, {})
+        municipio_data = self.demographics["municipios"][municipio]
         comorbidities = {}
 
-        for comorbidity, rules in municipio_comorbidities.items():
-            probability = rules.get("base", 0)
-
-            if "age" in rules:
-                for age_range, adjusted_prob in rules["age"].items():
-                    min_age = int(age_range.split("+")[0]) if "+" in age_range else None
-                    if min_age and age >= min_age:
-                        probability = adjusted_prob
-
-            if "gender" in rules:
-                probability = rules["gender"].get(gender, probability)
-
-            comorbidities[comorbidity] = random.random() < probability
+        for comorbidity, rate in municipio_data["comorbilidades"].items():
+            comorbidities[comorbidity] = random.random() < (rate / 100)
 
         return comorbidities
 
@@ -120,18 +105,13 @@ class SyntheticPopulationGenerator:
         else:
             return "retired"
 
-    def _generate_age(self):
+    def _generate_age(self, age_distribution):
         """
-        Generate an age based on the demographics distribution.
+        Generate an age based on the age distribution for a municipio.
 
+        :param age_distribution: Dictionary of age ranges and their probabilities.
         :return: An integer representing the age of an agent.
         """
-        age_distribution = self.demographics.get("age_distribution", {
-            "0-17": 0.25,
-            "18-64": 0.6,
-            "65+": 0.15
-        })
-
         ranges = list(age_distribution.keys())
         probabilities = list(age_distribution.values())
 
@@ -145,83 +125,38 @@ class SyntheticPopulationGenerator:
 
     def _generate_gender(self):
         """
-        Generate a gender based on the demographics distribution.
+        Generate a gender based on a 50/50 distribution.
 
         :return: A string representing the gender of an agent.
         """
-        gender_distribution = self.demographics.get("gender_distribution", {
-            "male": 0.5,
-            "female": 0.5
-        })
-
-        genders = list(gender_distribution.keys())
-        probabilities = list(gender_distribution.values())
-        return random.choices(genders, probabilities)[0]
-
-    def _generate_municipio(self):
-        """
-        Assign a municipio to the agent based on demographics.
-
-        :return: The name or ID of the municipio.
-        """
-        municipio_distribution = self.demographics.get("municipio_distribution", {
-            "Municipio_1": 0.4,
-            "Municipio_2": 0.35,
-            "Municipio_3": 0.25
-        })
-
-        municipios = list(municipio_distribution.keys())
-        probabilities = list(municipio_distribution.values())
-        return random.choices(municipios, probabilities)[0]
+        return random.choice(["male", "female"])
 
 # Example usage
 if __name__ == "__main__":
+    # Replace this with actual demographic data loaded from JSON
     demographics_data = {
-        "num_agents": 100,
-        "age_distribution": {
-            "0-17": 0.25,
-            "18-64": 0.6,
-            "65+": 0.15
-        },
-        "gender_distribution": {
-            "male": 0.5,
-            "female": 0.5
-        },
-        "household_size_distribution_by_municipio": {
-            "Municipio_1": [1, 2, 3, 4, 5],
-            "Municipio_2": [2, 3, 4, 5, 6],
-            "Municipio_3": [1, 3, 4, 5]
-        },
-        "household_size_probabilities_by_municipio": {
-            "Municipio_1": [0.2, 0.3, 0.25, 0.15, 0.1],
-            "Municipio_2": [0.1, 0.25, 0.3, 0.2, 0.15],
-            "Municipio_3": [0.3, 0.2, 0.25, 0.15]
-        },
-        "households_by_municipio": {
-            "Municipio_1": 30,
-            "Municipio_2": 15,
-            "Municipio_3": 5
-        },
-        "municipio_distribution": {
-            "Municipio_1": 0.4,
-            "Municipio_2": 0.35,
-            "Municipio_3": 0.25
-        },
-        "comorbidity_distribution_by_municipio": {
-            "Municipio_1": {
-                "diabetes": {"base": 0.1, "age": {"40+": 0.2}},
-                "hypertension": {"base": 0.15, "age": {"40+": 0.3}},
-                "obesity": {"base": 0.2}
-            },
-            "Municipio_2": {
-                "diabetes": {"base": 0.12, "age": {"40+": 0.25}},
-                "hypertension": {"base": 0.18, "age": {"40+": 0.35}},
-                "obesity": {"base": 0.22}
-            },
-            "Municipio_3": {
-                "diabetes": {"base": 0.08, "age": {"40+": 0.15}},
-                "hypertension": {"base": 0.1, "age": {"40+": 0.2}},
-                "obesity": {"base": 0.18}
+        "municipios": {
+            "Municipio1": {
+                "poblacion_total": 100,
+                "hogares_por_tamano": {
+                    "1_persona": 14.8,
+                    "2_personas": 24.7,
+                    "3_personas": 22.9,
+                    "4_personas": 21.1,
+                    "5_personas_o_mas": 16.5
+                },
+                "comorbilidades": {
+                    "diabetes": 10.1,
+                    "hipertension": 30.9,
+                    "obesidad": 18.0,
+                    "tabaquismo": 19.0,
+                    "asma": 8.2
+                },
+                "distribucion_edad": {
+                    "0-17": 26.5,
+                    "18-64": 60.5,
+                    "65+": 13.0
+                }
             }
         }
     }
