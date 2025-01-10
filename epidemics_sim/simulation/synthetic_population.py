@@ -9,7 +9,7 @@ class SyntheticPopulationGenerator:
         :param demographics: Dictionary with demographic data (e.g., age distribution, gender ratio).
         """
         self.demographics = demographics
-        self.num_agents = demographics.get("num_agents", 100)
+        self.num_agents = demographics.get("total_population", 100)
 
     def generate_population(self):
         """
