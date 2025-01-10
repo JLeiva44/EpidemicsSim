@@ -1,6 +1,6 @@
 from city_cluster import CityClusterGenerator
 from dailysim import DailySimulation
-from analyzer import SimulationAnalyzer
+from simulation_utils import SimulationAnalyzer
 
 class SimulationController:
     def __init__(self, demographics, config, disease_model_class, policies, simulation_days):
@@ -31,7 +31,6 @@ class SimulationController:
         from synthetic_population import SyntheticPopulationGenerator
 
         generator = SyntheticPopulationGenerator(
-            num_agents=self.demographics["total_population"],
             demographics=self.demographics
         )
         _, agents = generator.generate_population()
@@ -44,7 +43,7 @@ class SimulationController:
         :return: Results of the simulation.
         """
         # Generate transport interactions
-        from clusters import TransportInteraction
+        from transport_interaction import TransportInteraction
 
         transport_interaction = TransportInteraction(self.agents, self.config["transport"])
 
