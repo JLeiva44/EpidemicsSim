@@ -1,70 +1,45 @@
-from simulation.microsimulation.synthethic_population import SyntheticPopulationGenerator
-# from microsimulation.population_cluster import PopulationCluster
-# from microsimulation.disease_propagation import DiseasePropagation
-# from microsimulation.analysis import SimulationAnalyzer
-
-def main():
-    # Example demographics data
-    demographics_data = {
-        "num_agents": 100,
-        "age_distribution": {
-            "0-17": 0.25,
-            "18-64": 0.6,
-            "65+": 0.15
-        },
-        "gender_distribution": {
-            "male": 0.5,
-            "female": 0.5
-        },
-        "household_size_distribution": [1, 2, 3, 4, 5, 6, 7],
-        "household_size_probabilities": [0.3, 0.25, 0.2, 0.15, 0.05, 0.03, 0.02],
-        "num_households": 50,
-        "comorbidity_distribution": {
-            "diabetes": {"base": 0.1, "age": {"40+": 0.2}},
-            "hypertension": {"base": 0.15, "age": {"40+": 0.3}},
-            "obesity": {"base": 0.2},
-            "smoking": {"base": 0.25, "gender": {"male": 0.3, "female": 0.2}},
-            "copd": {"base": 0.05, "age": {"50+": 0.1}},
-            "chronic_heart_disease": {"base": 0.07, "age": {"50+": 0.15}},
-            "chronic_kidney_disease": {"base": 0.03}
-        }
-    }
-    num_homes = 300
-    num_workplaces = 50
-    num_schools = 20
-    simulation_duration_days = 30  # Duración total de la simulación en días
-
-    # Etapa 2: Generar la población sintética
-    print("Generando población sintética...")
-    generator = SyntheticPopulationGenerator(demographics=demographics_data)
-    households, population = generator.generate_population()
-    # Print example households
-    for i, household in enumerate(households[:5]):
-        print(f"Household {i+1}: {[agent.agent_id for agent in household]} with ages {[agent.age for agent in household]}")
+import json
 
 
-    # # Etapa 3: Crear los clusters (hogar, trabajo, escuela)
-    # print("Agrupando población en clusters...")
-    # cluster_creator = PopulationCluster()
-    # home_clusters = cluster_creator.create_home_clusters(population, num_homes)
-    # work_clusters = cluster_creator.create_work_clusters(population, num_workplaces)
-    # school_clusters = cluster_creator.create_school_clusters(population, num_schools)
+demographics = {}
+# Abre el archivo JSON
+with open('epidemics_sim/data/habana.json', 'r') as archivo:
+    # Cargar los datos del archivo en un diccionario
+    demographics = json.load(archivo)
 
-    # # Etapa 4: Propagar la enfermedad
-    # print("Simulando propagación de la enfermedad...")
-    # disease_model = DiseasePropagation(simulation_duration=simulation_duration_days * 24 * 60)
-    # disease_model.initialize_infection(population, initial_infected=5)  # Comenzamos con 5 infectados inicialmente
-    # disease_model.simulate_spread(
-    #     population,
-    #     clusters={"home": home_clusters, "work": work_clusters, "school": school_clusters},
-    #     duration_days=simulation_duration_days
-    # )
+#print(diccionario)
 
-    # # Etapa 5: Análisis de resultados
-    # print("Analizando resultados...")
-    # analyzer = SimulationAnalyzer(population)
-    # analyzer.report_summary()
-    # analyzer.plot_infection_curves()
+# Other Data
+example_config = {
+    "home": {"duration_mean": 480, "duration_std": 120},
+    "work": {"duration_mean": 480, "duration_std": 120, "min_links": 2},
+    "school": {"duration_mean": 300, "duration_std": 60},
+    "shopping": {"duration_mean": 37, "duration_std": 10, "max_agents": 50},
+    "transport": {"interval": 5, "duration_mean": 15, "duration_std": 5},
+    "household_sizes": [1, 2, 3, 4, 5, 6],
+    "household_distribution": [0.1, 0.2, 0.3, 0.2, 0.15, 0.05],
+    "work_sizes": [5, 10, 20, 50],
+    "work_distribution": [0.4, 0.3, 0.2, 0.1],
+    "school_sizes": [20, 30, 40],
+    "school_distribution": [0.5, 0.3, 0.2],
+    "shopping_centers": 5,
+    "disease": {"transmission_rate": 0.03, "recovery_rate": 0.85, "mortality_rate": 0.01}
+}
 
-if __name__ == "__main__":
-    main()
+# Controller
+from epidemics_sim.simulation.sim_controller import SimulationController
+
+# Disease Model
+from epidemics_sim.diseases.covid_model import CovidModel
+
+# Policies
+from epidemics_sim.policies.lockdown_policy import LockdownPolicy
+from epidemics_sim.policies.social_distancing_policy import SocialDistancingPolicy
+from epidemics_sim.policies.vaccination_policy import VaccinationPolicy
+
+
+
+CONTROLLER = SimulationController(demographics,example_config,CovidModel,[LockdownPolicy, SocialDistancingPolicy, VaccinationPolicy],10)
+
+report = CONTROLLER.run()
+
