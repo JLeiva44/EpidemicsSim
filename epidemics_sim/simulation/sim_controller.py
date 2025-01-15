@@ -33,7 +33,7 @@ class SimulationController:
         generator = SyntheticPopulationGenerator(
             demographics=self.demographics
         )
-        _, agents = generator.generate_population()
+        agents = generator.generate_population()
         return agents
 
     def run(self):
