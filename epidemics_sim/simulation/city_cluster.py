@@ -1,15 +1,14 @@
 import random
-from clusters_whit_subclusters import ClusterWithSubclusters
+from epidemics_sim.simulation.clusters_whit_subclusters import ClusterWithSubclusters
 
 class CityClusterGenerator:
-    def __init__(self, config, municipal_data):
+    def __init__(self,municipal_data):
         """
         Initialize the city cluster generator.
 
         :param config: Configuration dictionary containing parameters for generating clusters.
         :param municipal_data: Dictionary with municipal-specific data (e.g., population distribution, cluster sizes).
         """
-        self.config = config
         self.municipal_data = municipal_data
 
     def _get_agents_by_municipio(self, agents, municipio):
@@ -24,27 +23,23 @@ class CityClusterGenerator:
 
     def generate_home_clusters(self, agents):
         """
-        Generate home clusters based on municipal-specific data.
+        Generate home clusters based on household IDs assigned during population generation.
 
         :param agents: List of agents to assign to home clusters.
         :return: List of home clusters.
         """
-        clusters = []
+        households = {}
 
-        for municipio, data in self.municipal_data.items():
-            municipio_agents = self._get_agents_by_municipio(agents, municipio)
-            household_sizes = data.get("household_sizes", [1, 2, 3, 4, 5, 6])
-            household_distribution = data.get("household_distribution", [0.1, 0.2, 0.3, 0.2, 0.15, 0.05])
+        # Agrupar agentes por household_id
+        for agent in agents:
+            household_id = agent.household_id
+            if household_id not in households:
+                households[household_id] = []
+            households[household_id].append(agent)
 
-            unassigned_agents = municipio_agents.copy()
-            while unassigned_agents:
-                size = random.choices(household_sizes, household_distribution)[0]
-                size = min(size, len(unassigned_agents))
-                cluster_agents = unassigned_agents[:size]
-                unassigned_agents = unassigned_agents[size:]
-                clusters.append(ClusterWithSubclusters(cluster_agents, self.config, "home", "home"))
-
-        return clusters
+        # Crear un cluster por cada hogar
+        home_clusters = [ClusterWithSubclusters(household, self.municipal_data, "home", "home") for household in households.values()]
+        return home_clusters
 
     def generate_work_clusters(self, agents):
         """
@@ -57,19 +52,19 @@ class CityClusterGenerator:
 
         for municipio, data in self.municipal_data.items():
             municipio_agents = self._get_agents_by_municipio(agents, municipio)
-            inter_municipal_prob = data.get("inter_municipal_work_prob", {})
+            work_sizes = list(data["distribucion_centros_laborales"].keys())
+            work_distribution = list(data["distribucion_centros_laborales"].values())
 
-            # Assign agents to work clusters considering inter-municipal probabilities
-            for target_municipio, prob in inter_municipal_prob.items():
-                target_agents = [
-                    agent for agent in municipio_agents if random.random() < prob
-                ]
-                municipio_agents = [agent for agent in municipio_agents if agent not in target_agents]
+            unassigned_agents = municipio_agents.copy()
+            while unassigned_agents:
+                size_key = random.choices(work_sizes, work_distribution)[0]
+                size_mapping = {"pequenos": 10, "medianos": 50, "grandes": 100}
+                size = size_mapping[size_key]
+                size = min(size, len(unassigned_agents))
+                cluster_agents = unassigned_agents[:size]
+                unassigned_agents = unassigned_agents[size:]
 
-                clusters.extend(self._generate_clusters_with_subclusters(target_agents, "work", "work"))
-
-            # Assign remaining agents to work clusters within the same municipio
-            clusters.extend(self._generate_clusters_with_subclusters(municipio_agents, "work", "work"))
+                clusters.append(ClusterWithSubclusters(cluster_agents, self.municipal_data, "work", "work"))
 
         return clusters
 
@@ -80,7 +75,24 @@ class CityClusterGenerator:
         :param agents: List of agents to assign to school clusters.
         :return: List of school clusters with subclusters.
         """
-        return self._generate_clusters_with_subclusters(agents, "school", "school")
+        clusters = []
+        for municipio, data in self.municipal_data.items():
+            municipio_agents = self._get_agents_by_municipio(agents, municipio)
+            school_sizes = list(data["distribucion_estudiantes"].keys())
+            school_distribution = list(data["distribucion_estudiantes"].values())
+
+            unassigned_agents = municipio_agents.copy()
+            while unassigned_agents:
+                size_key = random.choices(school_sizes, school_distribution)[0]
+                size_mapping = {"primaria": 30, "secundaria": 40, "preuniversitario": 50, "tecnico_profesional": 60}
+                size = size_mapping[size_key]
+                size = min(size, len(unassigned_agents))
+                cluster_agents = unassigned_agents[:size]
+                unassigned_agents = unassigned_agents[size:]
+
+                clusters.append(ClusterWithSubclusters(cluster_agents, self.municipal_data, "school", "school"))
+
+        return clusters
 
     def generate_shopping_clusters(self, agents):
         """
@@ -89,92 +101,20 @@ class CityClusterGenerator:
         :param agents: List of agents to assign to shopping clusters.
         :return: List of shopping clusters with subclusters.
         """
-        return self._generate_clusters_with_subclusters(agents, "shopping", "shopping")
-
-    def _generate_clusters_with_subclusters(self, agents, cluster_type, config_key):
-        """
-        Generalized method to generate clusters with subclusters based on municipal data.
-
-        :param agents: List of agents to assign to the cluster.
-        :param cluster_type: Type of cluster (e.g., "work", "school").
-        :param config_key: Configuration key for subcluster parameters.
-        :return: List of clusters with subclusters.
-        """
         clusters = []
-
         for municipio, data in self.municipal_data.items():
             municipio_agents = self._get_agents_by_municipio(agents, municipio)
-            subcluster_sizes = data.get(f"{config_key}_sizes", [5, 10, 20])
-            subcluster_distribution = data.get(f"{config_key}_distribution", [0.4, 0.3, 0.3])
+            shopping_centers = data.get("shopping_centers", 5)
 
             unassigned_agents = municipio_agents.copy()
-            while unassigned_agents:
-                size = random.choices(subcluster_sizes, subcluster_distribution)[0]
+            for _ in range(shopping_centers):
+                if not unassigned_agents:
+                    break
+                size = random.randint(20, 50)  # Random cluster size for shopping
                 size = min(size, len(unassigned_agents))
                 cluster_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                clusters.append(ClusterWithSubclusters(cluster_agents, self.config, cluster_type, config_key))
+                clusters.append(ClusterWithSubclusters(cluster_agents, self.municipal_data, "shopping", "shopping"))
 
         return clusters
-
-# Example Configuration
-example_config = {
-    "home": {
-        "duration_mean": 480,
-        "duration_std": 120
-    },
-    "work": {
-        "duration_mean": 480,
-        "duration_std": 120
-    },
-    "school": {
-        "duration_mean": 300,
-        "duration_std": 60
-    },
-    "shopping": {
-        "duration_mean": 37,
-        "duration_std": 10
-    }
-}
-
-example_municipal_data = {
-    "Municipio_1": {
-        "household_sizes": [1, 2, 3, 4],
-        "household_distribution": [0.2, 0.3, 0.3, 0.2],
-        "work_sizes": [5, 10, 15],
-        "work_distribution": [0.5, 0.3, 0.2],
-        "school_sizes": [20, 30, 40],
-        "school_distribution": [0.4, 0.4, 0.2],
-        "inter_municipal_work_prob": {"Municipio_2": 0.3, "Municipio_3": 0.1}
-    },
-    "Municipio_2": {
-        "household_sizes": [2, 3, 4, 5],
-        "household_distribution": [0.1, 0.3, 0.4, 0.2],
-        "work_sizes": [10, 20, 50],
-        "work_distribution": [0.4, 0.4, 0.2],
-        "school_sizes": [25, 35, 45],
-        "school_distribution": [0.3, 0.5, 0.2],
-        "inter_municipal_work_prob": {"Municipio_1": 0.2, "Municipio_3": 0.15}
-    }
-}
-
-# Example Usage
-if __name__ == "__main__":
-    from clusters_whit_subclusters import Subcluster
-
-    # Example agents
-    agents = [f"Agent_{i}" for i in range(200)]
-
-    generator = CityClusterGenerator(example_config, example_municipal_data)
-
-    # Generate clusters
-    home_clusters = generator.generate_home_clusters(agents[:100])
-    work_clusters = generator.generate_work_clusters(agents[:100])
-    school_clusters = generator.generate_school_clusters(agents[100:150])
-    shopping_clusters = generator.generate_shopping_clusters(agents)
-
-    print(f"Generated {len(home_clusters)} home clusters.")
-    print(f"Generated {len(work_clusters)} work clusters.")
-    print(f"Generated {len(school_clusters)} school clusters.")
-    print(f"Generated {len(shopping_clusters)} shopping clusters.")

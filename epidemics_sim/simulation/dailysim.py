@@ -1,7 +1,7 @@
 import random
-from city_cluster_generator import CityClusterGenerator
-from healthcare_system import HealthcareSystem
-from simulation_analyzer import SimulationAnalyzer
+from epidemics_sim.simulation.city_cluster import CityClusterGenerator
+from epidemics_sim.simulation.healthcare import HealthcareSystem
+from epidemics_sim.simulation.simulation_utils import SimulationAnalyzer
 
 class DailySimulation:
     def __init__(self, agents, cluster_generator, transport, config, disease_model, policies, healthcare_system, analyzer, initial_infected=1):

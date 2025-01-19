@@ -1,6 +1,11 @@
-from city_cluster import CityClusterGenerator
-from dailysim import DailySimulation
-from simulation_utils import SimulationAnalyzer
+from epidemics_sim.simulation.city_cluster import CityClusterGenerator
+from epidemics_sim.simulation.dailysim import DailySimulation
+from epidemics_sim.simulation.simulation_utils import SimulationAnalyzer
+from epidemics_sim.policies.lockdown_policy import LockdownPolicy
+from epidemics_sim.policies.social_distancing_policy import SocialDistancingPolicy
+from epidemics_sim.policies.vaccination_policy import VaccinationPolicy
+from epidemics_sim.simulation.pop_with_ser import SyntheticPopulationGenerator #TODO: Cambiar esto a intethic
+from epidemics_sim.simulation.transport_interaction import TransportInteraction
 
 class SimulationController:
     def __init__(self, demographics, config, disease_model_class, policies, simulation_days):
@@ -16,24 +21,40 @@ class SimulationController:
         self.demographics = demographics
         self.config = config
         self.disease_model_class = disease_model_class
-        self.policies = [policy() for policy in policies]
+        self.policies = self._configurate_policies(policies) #[policy() for policy in policies]
         self.simulation_days = simulation_days
         self.agents = self._generate_agents()
-        self.cluster_generator = CityClusterGenerator(config)
+        self.cluster_generator = CityClusterGenerator(demographics["municipios"])
         self.analyzer = SimulationAnalyzer()
 
+    def _configurate_policies(self, policies):
+        """
+        Configurate the policies.
+
+        :return: List of policy classes to apply.
+        """
+        policies = []
+        for policy in policies:
+            if policy == "LockdownPolicy":
+                policies.append(LockdownPolicy([])) # Restricted_clusters arg
+            elif policy == "SocialDistancingPolicy":
+                policies.append(SocialDistancingPolicy(0.5)) # Social_distance_factor arg
+            elif policy == "VaccinationPolicy":
+                policies.append(VaccinationPolicy(0.5,0.8)) # Vaccination_rate arg    
+        return policies
+    
     def _generate_agents(self):
         """
         Generate a synthetic population based on demographic data.
 
         :return: List of generated agents.
         """
-        from synthetic_population import SyntheticPopulationGenerator
 
         generator = SyntheticPopulationGenerator(
             demographics=self.demographics
         )
-        agents = generator.generate_population()
+        # agents = generator.generate_population()
+        agents = generator.load_population('population.pkl')
         return agents
 
     def run(self):
@@ -43,8 +64,6 @@ class SimulationController:
         :return: Results of the simulation.
         """
         # Generate transport interactions
-        from transport_interaction import TransportInteraction
-
         transport_interaction = TransportInteraction(self.agents, self.config["transport"])
 
         # Initialize the disease model
