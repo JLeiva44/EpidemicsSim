@@ -39,9 +39,9 @@ class CityClusterGenerator:
         Dynamically generate home clusters based on municipal data.
 
         :param agents: List of agents to assign to home clusters.
-        :return: List of home clusters.
+        :return: A single cluster with all home subclusters.
         """
-        clusters = []
+        subclusters = []
 
         for municipio, data in self.municipal_data.items():
             municipio_agents = self._get_agents_by_municipio(agents, municipio)
@@ -73,18 +73,18 @@ class CityClusterGenerator:
                         household_agents[-1] = adult
                         unassigned_agents.remove(adult)
 
-                clusters.append(ClusterWithSubclusters(household_agents, self.municipal_data, "home", "home"))
+                subclusters.append(household_agents)
 
-        return clusters
+        return ClusterWithSubclusters(subclusters, {"type": "home"})
 
     def generate_work_clusters(self, agents):
         """
         Generate work clusters with subclusters (e.g., companies) based on municipal data.
 
         :param agents: List of agents to assign to work clusters.
-        :return: List of work clusters with subclusters.
+        :return: A single cluster with all work subclusters.
         """
-        clusters = []
+        subclusters = []
 
         for municipio, data in self.municipal_data.items():
             municipio_agents = self._get_agents_by_municipio(agents, municipio)
@@ -100,18 +100,18 @@ class CityClusterGenerator:
                 cluster_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                clusters.append(ClusterWithSubclusters(cluster_agents, self.municipal_data, "work", "work"))
+                subclusters.append(cluster_agents)
 
-        return clusters
+        return ClusterWithSubclusters(subclusters, {"type": "work"})
 
     def generate_school_clusters(self, agents):
         """
         Generate school clusters with subclusters (e.g., schools) based on municipal data.
 
         :param agents: List of agents to assign to school clusters.
-        :return: List of school clusters with subclusters.
+        :return: A single cluster with all school subclusters.
         """
-        clusters = []
+        subclusters = []
         for municipio, data in self.municipal_data.items():
             municipio_agents = self._get_agents_by_municipio(agents, municipio)
             school_sizes = list(data["distribucion_estudiantes"].keys())
@@ -131,18 +131,18 @@ class CityClusterGenerator:
                 cluster_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                clusters.append(ClusterWithSubclusters(cluster_agents, self.municipal_data, "school", "school"))
+                subclusters.append(cluster_agents)
 
-        return clusters
+        return ClusterWithSubclusters(subclusters, {"type": "school"})
 
     def generate_shopping_clusters(self, agents):
         """
         Generate shopping clusters with subclusters (e.g., shopping centers).
 
         :param agents: List of agents to assign to shopping clusters.
-        :return: List of shopping clusters with subclusters.
+        :return: A single cluster with all shopping subclusters.
         """
-        clusters = []
+        subclusters = []
         for municipio, data in self.municipal_data.items():
             municipio_agents = self._get_agents_by_municipio(agents, municipio)
             shopping_centers = data.get("shopping_centers", 5)
@@ -156,6 +156,6 @@ class CityClusterGenerator:
                 cluster_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                clusters.append(ClusterWithSubclusters(cluster_agents, self.municipal_data, "shopping", "shopping"))
+                subclusters.append(cluster_agents)
 
-        return clusters
+        return ClusterWithSubclusters(subclusters, {"type": "shopping"})

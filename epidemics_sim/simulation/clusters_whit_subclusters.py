@@ -2,25 +2,32 @@ import random
 import networkx as nx
 
 class Subcluster:
-    def __init__(self, agents, config, active_periods):
+    def __init__(self, agents, config, active_periods, interaction_density=1.0):
         """
         Initialize a subcluster.
 
         :param agents: List of agents assigned to the subcluster.
         :param config: Configuration dictionary for the subcluster.
-        :param active_periods: List of periods during which the subcluster is active (e.g., ["morning", "daytime"]).
+        :param active_periods: List of periods during which the subcluster is active.
+        :param interaction_density: Proportion of possible interactions (default 1.0 for full graph).
         """
         self.agents = agents
         self.config = config
         self.active_periods = active_periods
+        self.interaction_density = interaction_density
 
     def generate_graph(self):
         """
-        Generate a complete graph for the subcluster.
+        Generate a graph for the subcluster.
 
         :return: A NetworkX graph representing the subcluster.
         """
-        graph = nx.complete_graph(len(self.agents))
+        num_agents = len(self.agents)
+        if self.interaction_density == 1.0:
+            graph = nx.complete_graph(num_agents)
+        else:
+            graph = nx.erdos_renyi_graph(num_agents, self.interaction_density)
+
         for i, agent in enumerate(self.agents):
             graph.nodes[i]["agent"] = agent
         return graph
@@ -72,6 +79,7 @@ class ClusterWithSubclusters:
         subcluster_sizes = self.config[subcluster_config_key].get("size_ranges", [])
         subcluster_distribution = self.config[subcluster_config_key].get("distribution", [])
         active_periods = self.config[subcluster_config_key].get("active_periods", [])
+        interaction_density = self.config[subcluster_config_key].get("interaction_density", 1.0)
         unassigned_agents = self.agents.copy()
 
         while unassigned_agents:
@@ -81,7 +89,7 @@ class ClusterWithSubclusters:
             unassigned_agents = unassigned_agents[size:]
 
             subcluster_config = self.config[subcluster_config_key]
-            subcluster = Subcluster(subcluster_agents, subcluster_config, active_periods)
+            subcluster = Subcluster(subcluster_agents, subcluster_config, active_periods, interaction_density)
             self.subclusters.append(subcluster)
 
     def simulate_interactions(self, time_period):
@@ -103,11 +111,13 @@ example_config = {
         "size_ranges": [5, 10, 20, 50],
         "distribution": [0.4, 0.3, 0.2, 0.1],
         "active_periods": ["daytime"],
+        "interaction_density": 0.8,
     },
     "school": {
         "size_ranges": [20, 30, 40],
         "distribution": [0.5, 0.3, 0.2],
         "active_periods": ["morning", "daytime"],
+        "interaction_density": 0.9,
     },
 }
 
