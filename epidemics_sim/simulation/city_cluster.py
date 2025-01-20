@@ -2,14 +2,27 @@ import random
 from epidemics_sim.simulation.clusters_whit_subclusters import ClusterWithSubclusters
 
 class CityClusterGenerator:
-    def __init__(self,municipal_data):
+    def __init__(self, municipal_data):
         """
         Initialize the city cluster generator.
 
-        :param config: Configuration dictionary containing parameters for generating clusters.
         :param municipal_data: Dictionary with municipal-specific data (e.g., population distribution, cluster sizes).
         """
         self.municipal_data = municipal_data
+
+    def generate_clusters(self, agents):
+        """
+        Generate all types of clusters (home, work, school, shopping).
+
+        :param agents: List of agents to assign to clusters.
+        :return: Dictionary containing all generated clusters.
+        """
+        return {
+            "home": self.generate_home_clusters(agents),
+            "work": self.generate_work_clusters(agents),
+            "school": self.generate_school_clusters(agents),
+            "shopping": self.generate_shopping_clusters(agents),
+        }
 
     def _get_agents_by_municipio(self, agents, municipio):
         """
@@ -23,27 +36,50 @@ class CityClusterGenerator:
 
     def generate_home_clusters(self, agents):
         """
-        Generate home clusters based on household IDs assigned during population generation.
+        Dynamically generate home clusters based on municipal data.
 
         :param agents: List of agents to assign to home clusters.
         :return: List of home clusters.
         """
-        households = {}
+        clusters = []
 
-        # Agrupar agentes por household_id
-        for agent in agents:
-            household_id = agent.household_id
-            if household_id not in households:
-                households[household_id] = []
-            households[household_id].append(agent)
+        for municipio, data in self.municipal_data.items():
+            municipio_agents = self._get_agents_by_municipio(agents, municipio)
+            household_sizes = list(data["hogares_por_tamano"].keys())
+            household_distribution = list(data["hogares_por_tamano"].values())
 
-        # Crear un cluster por cada hogar
-        home_clusters = [ClusterWithSubclusters(household, self.municipal_data, "home", "home") for household in households.values()]
-        return home_clusters
+            unassigned_agents = municipio_agents.copy()
+
+            while unassigned_agents:
+                size_key = random.choices(household_sizes, household_distribution)[0]
+                size_mapping = {
+                    "1_persona": 1,
+                    "2_personas": 2,
+                    "3_personas": 3,
+                    "4_personas": 4,
+                    "5_personas_o_mas": random.randint(5, 8)
+                }
+                size = size_mapping[size_key]
+                size = min(size, len(unassigned_agents))
+
+                household_agents = unassigned_agents[:size]
+                unassigned_agents = unassigned_agents[size:]
+
+                # Ensure at least one adult in the household
+                if not any(agent.age >= 18 for agent in household_agents):
+                    adults = [agent for agent in unassigned_agents if agent.age >= 18]
+                    if adults:
+                        adult = adults.pop(0)
+                        household_agents[-1] = adult
+                        unassigned_agents.remove(adult)
+
+                clusters.append(ClusterWithSubclusters(household_agents, self.municipal_data, "home", "home"))
+
+        return clusters
 
     def generate_work_clusters(self, agents):
         """
-        Generate work clusters with subclusters (e.g., companies) based on municipal-specific data and inter-municipal probabilities.
+        Generate work clusters with subclusters (e.g., companies) based on municipal data.
 
         :param agents: List of agents to assign to work clusters.
         :return: List of work clusters with subclusters.
@@ -70,7 +106,7 @@ class CityClusterGenerator:
 
     def generate_school_clusters(self, agents):
         """
-        Generate school clusters with subclusters (e.g., schools) based on municipal-specific data.
+        Generate school clusters with subclusters (e.g., schools) based on municipal data.
 
         :param agents: List of agents to assign to school clusters.
         :return: List of school clusters with subclusters.
@@ -84,7 +120,12 @@ class CityClusterGenerator:
             unassigned_agents = municipio_agents.copy()
             while unassigned_agents:
                 size_key = random.choices(school_sizes, school_distribution)[0]
-                size_mapping = {"primaria": 30, "secundaria": 40, "preuniversitario": 50, "tecnico_profesional": 60}
+                size_mapping = {
+                    "primaria": 30,
+                    "secundaria": 40,
+                    "preuniversitario": 50,
+                    "tecnico_profesional": 60
+                }
                 size = size_mapping[size_key]
                 size = min(size, len(unassigned_agents))
                 cluster_agents = unassigned_agents[:size]
