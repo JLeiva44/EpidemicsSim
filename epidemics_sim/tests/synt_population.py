@@ -1,5 +1,5 @@
 from epidemics_sim.logger import logger
-from epidemics_sim.simulation.pop_with_ser import SyntheticPopulationGenerator
+from epidemics_sim.simulation.synthetic_population import SyntheticPopulationGenerator
 import json
 from epidemics_sim.simulation.city_cluster import CityClusterGenerator
 from epidemics_sim.simulation.clusters_whit_subclusters import ClusterWithSubclusters
@@ -15,19 +15,13 @@ with open('epidemics_sim/data/test.json', 'r') as archivo:
 
 population_generator = SyntheticPopulationGenerator(demographics)
 
-#population = population_generator.generate_population()
+population = population_generator.generate_population()
  
 #Guardar la población en un archivo
-#population_generator.save_population(population, 'population.pkl')
+population_generator.save_population(population, 'population.pkl')
 
 # Cargar la población desde el archivo
 loaded_agents = population_generator.load_population('population.pkl')
 
-#print(loaded_agents)
+print("poblacion hecha")
 
-# region : Clusters
-
-generator = CityClusterGenerator(example_config, demographics['municipios'])
-
-
-# endregion
