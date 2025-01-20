@@ -12,9 +12,9 @@ class HealthcareSystem:
         :param mortality_rates: Mortality rates for each level of care.
         """
         self.municipalities = municipalities
-        self.consultorios = self._initialize_units("num_consultorios", Consultorio)
-        self.policlinicos = self._initialize_units("num_policlinicos", Policlinico)
-        self.hospitals = self._initialize_units("num_hospitals", Hospital)
+        self.consultorios = self._initialize_units("consultorios", Consultorio)
+        self.policlinicos = self._initialize_units("policlinicos", Policlinico)
+        self.hospitals = self._initialize_units("hospitales", Hospital)
         self.recovery_rates = recovery_rates
         self.mortality_rates = mortality_rates
 
@@ -26,9 +26,10 @@ class HealthcareSystem:
         :param unit_class: Class of the healthcare unit to instantiate.
         :return: Dictionary of initialized units.
         """
+        key1 = "infraestructura_salud"
         units = {}
         for municipio, data in self.municipalities.items():
-            units[municipio] = [unit_class(f"{unit_class.__name__}_{i}", municipio) for i in range(data[key])]
+            units[municipio] = [unit_class(f"{unit_class.__name__}_{i}", municipio) for i in range(data["infraestructura_salud"][key])]
         return units
 
     def notify_infection(self, agent):
