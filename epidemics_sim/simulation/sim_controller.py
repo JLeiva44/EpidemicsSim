@@ -1,4 +1,4 @@
-from epidemics_sim.simulation.city_cluster import CityClusterGenerator
+from epidemics_sim.simulation.clusters import CityClusterGenerator
 from epidemics_sim.simulation.dailysim import DailySimulation
 from epidemics_sim.simulation.simulation_utils import SimulationAnalyzer
 from epidemics_sim.policies.lockdown_policy import LockdownPolicy

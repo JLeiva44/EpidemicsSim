@@ -1,5 +1,5 @@
 import random
-from epidemics_sim.simulation.city_cluster import CityClusterGenerator
+from epidemics_sim.simulation.clusters import CityClusterGenerator
 from epidemics_sim.simulation.healthcare import HealthcareSystem
 from epidemics_sim.simulation.simulation_utils import SimulationAnalyzer
 
@@ -135,19 +135,15 @@ class DailySimulation:
         """
         return self._simulate_cluster_interactions(self.clusters["home"], "night")
 
-    def _simulate_cluster_interactions(self, cluster_list, time_period):
+    def _simulate_cluster_interactions(self, cluster, time_period):
         """
-        Simulate interactions within a list of clusters and their subclusters for a specific time period.
+        Simulate interactions within a cluster and its subclusters for a specific time period.
 
-        :param cluster_list: List of clusters to simulate.
+        :param cluster: A ClusterWithSubclusters instance.
         :param time_period: Current time period.
-        :return: List of interactions within the clusters and subclusters.
+        :return: List of interactions within the cluster and subclusters.
         """
-        interactions = []
-        for cluster in cluster_list:
-            subcluster_interactions = cluster.simulate_interactions(time_period)
-            interactions.extend(subcluster_interactions)
-        return interactions
+        return cluster.simulate_interactions(time_period)
 
     def _apply_policies(self):
         """

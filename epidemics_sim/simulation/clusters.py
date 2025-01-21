@@ -138,7 +138,7 @@ class CityClusterGenerator:
                         household_agents[-1] = adult
                         unassigned_agents.remove(adult)
 
-                home_subclusters.append(Subcluster(household_agents, {}, ["morning", "evening", "night"]))
+                home_subclusters.append(Subcluster(household_agents, ["morning", "evening", "night"]))
 
         return ClusterWithSubclusters(home_subclusters, "home")
 
@@ -168,7 +168,7 @@ class CityClusterGenerator:
                 workplace_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                work_subclusters.append(Subcluster(workplace_agents, {}, ["daytime"]))
+                work_subclusters.append(Subcluster(workplace_agents, ["daytime"]))
 
         return ClusterWithSubclusters(work_subclusters, "work")
 
@@ -203,7 +203,7 @@ class CityClusterGenerator:
                 school_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                school_subclusters.append(Subcluster(school_agents, {}, ["morning", "daytime"]))
+                school_subclusters.append(Subcluster(school_agents, ["morning", "daytime"]))
 
         return ClusterWithSubclusters(school_subclusters, "school")
 
@@ -239,6 +239,6 @@ class CityClusterGenerator:
                 shopping_center_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                shopping_subclusters.append(Subcluster(shopping_center_agents, {}, ["evening"]))
+                shopping_subclusters.append(Subcluster(shopping_center_agents, ["evening"]))
 
         return ClusterWithSubclusters(shopping_subclusters, "shopping")
