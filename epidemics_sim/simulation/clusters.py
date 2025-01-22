@@ -2,25 +2,43 @@ import random
 import networkx as nx
 
 class Subcluster:
-    def __init__(self, agents, active_periods):
+    def __init__(self, agents, active_periods, topology="scale_free"):
         """
         Initialize a subcluster.
 
         :param agents: List of agents assigned to the subcluster.
         :param active_periods: List of periods during which the subcluster is active (e.g., ["morning", "daytime"]).
+        :param topology: Topology of the graph (e.g., "scale_free", "complete").
         """
         self.agents = agents
         self.active_periods = active_periods
+        self.topology = topology
 
     def generate_graph(self):
         """
-        Generate a complete graph for the subcluster.
+        Generate a graph for the subcluster based on its topology.
 
         :return: A NetworkX graph representing the subcluster.
         """
-        graph = nx.complete_graph(len(self.agents))
+        num_agents = len(self.agents)
+
+        if num_agents < 2:
+            # Return an empty graph for subclusters with fewer than 2 agents
+            return nx.Graph()
+
+        if self.topology == "scale_free":
+            # Adjust m dynamically to ensure it satisfies NetworkX requirements
+            m = min(2, num_agents - 1)
+            graph = nx.barabasi_albert_graph(num_agents, m)
+        elif self.topology == "complete":
+            graph = nx.complete_graph(num_agents)
+        else:
+            raise ValueError(f"Unknown topology: {self.topology}")
+
+        # Assign agents to graph nodes
         for i, agent in enumerate(self.agents):
             graph.nodes[i]["agent"] = agent
+
         return graph
 
     def simulate_interactions(self, time_period):
@@ -37,8 +55,8 @@ class Subcluster:
         interactions = []
 
         for edge in graph.edges:
-            agent1 = graph.nodes[edge[0]]["agent"]
-            agent2 = graph.nodes[edge[1]]["agent"]
+            agent1 = graph.nodes[edge[0]]['agent']
+            agent2 = graph.nodes[edge[1]]['agent']
             interactions.append((agent1, agent2))
 
         return interactions
@@ -138,7 +156,7 @@ class CityClusterGenerator:
                         household_agents[-1] = adult
                         unassigned_agents.remove(adult)
 
-                home_subclusters.append(Subcluster(household_agents, ["morning", "evening", "night"]))
+                home_subclusters.append(Subcluster(household_agents, ["morning", "evening", "night"], topology="complete"))
 
         return ClusterWithSubclusters(home_subclusters, "home")
 
@@ -157,7 +175,6 @@ class CityClusterGenerator:
             work_distribution = list(data["distribucion_centros_laborales"].values())
 
             unassigned_agents = municipio_agents.copy()
-
             size_mapping = {"pequenos": 10, "medianos": 50, "grandes": 100}
 
             while unassigned_agents:
@@ -168,7 +185,7 @@ class CityClusterGenerator:
                 workplace_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                work_subclusters.append(Subcluster(workplace_agents, ["daytime"]))
+                work_subclusters.append(Subcluster(workplace_agents, ["daytime"], topology="scale_free"))
 
         return ClusterWithSubclusters(work_subclusters, "work")
 
@@ -203,7 +220,7 @@ class CityClusterGenerator:
                 school_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                school_subclusters.append(Subcluster(school_agents, ["morning", "daytime"]))
+                school_subclusters.append(Subcluster(school_agents, ["morning", "daytime"], topology="scale_free"))
 
         return ClusterWithSubclusters(school_subclusters, "school")
 
@@ -239,6 +256,6 @@ class CityClusterGenerator:
                 shopping_center_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                shopping_subclusters.append(Subcluster(shopping_center_agents, ["evening"]))
+                shopping_subclusters.append(Subcluster(shopping_center_agents, ["evening"], topology="scale_free"))
 
         return ClusterWithSubclusters(shopping_subclusters, "shopping")

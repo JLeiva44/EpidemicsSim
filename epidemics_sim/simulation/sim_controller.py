@@ -54,7 +54,7 @@ class SimulationController:
         generator = SyntheticPopulationGenerator(
             demographics=self.demographics
         )
-        agents = generator.generate_population()
+        #agents = generator.generate_population()
         agents = generator.load_population('population.pkl')
         return agents
 
@@ -68,7 +68,7 @@ class SimulationController:
         transport_interaction = TransportInteraction(self.agents, self.config["transport"])
 
         # Initialize the disease model
-        disease_model = self.disease_model_class(self.agents, **self.config["disease"])
+        disease_model = self.disease_model_class(**self.config["disease"])
 
         # Initialize the HealthCare System
         healthcare_system = HealthcareSystem(self.demographics["municipios"],0.9,0.2)

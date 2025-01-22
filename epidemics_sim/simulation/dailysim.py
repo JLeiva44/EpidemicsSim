@@ -4,7 +4,7 @@ from epidemics_sim.simulation.healthcare import HealthcareSystem
 from epidemics_sim.simulation.simulation_utils import SimulationAnalyzer
 
 class DailySimulation:
-    def __init__(self, agents, cluster_generator, transport, config, disease_model, policies, healthcare_system, analyzer, initial_infected=1):
+    def __init__(self, agents, cluster_generator, transport, config, disease_model, policies, healthcare_system, analyzer, initial_infected=50):
         """
         Initialize the daily simulation controller.
 
@@ -57,7 +57,7 @@ class DailySimulation:
             simulation_results.append(daily_summary)
 
             # Update disease progression based on daily interactions
-            self.disease_model.update_states()
+            self.disease_model.update_states(self.agents)
 
             # Notify the healthcare system about new infections or changes
             for agent in self.agents:
@@ -68,11 +68,11 @@ class DailySimulation:
             self.healthcare_system.daily_operations()
 
             # Record daily statistics
-            self.analyzer.record_daily_stats(self.agents, self.healthcare_system)
+            self.analyzer.record_daily_stats(self.agents)
 
         # Generate and plot the final report
         report = self.analyzer.generate_report()
-        self.analyzer.plot_statistics()
+        self.analyzer.plot_disease_progression()
 
         return simulation_results
 
