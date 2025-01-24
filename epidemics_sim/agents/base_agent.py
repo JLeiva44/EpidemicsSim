@@ -1,23 +1,9 @@
 
 
-from enum import Enum
-
-class State(Enum):
-    SUSCEPTIBLE = 0
-    INFECTED = 1
-    RECOVERED = 2
-    DECEASED = 3
-    DIAGNOSED = 4
-    ASYMPTOMATIC = 5
-    SYMPTOMATIC = 6
-    SEVERE = 7
-    CRITICAL = 8
-    RECOVERED_IMMUNE = 9
-
 
 
 class BaseAgent:
-    def __init__(self, agent_id, initial_state = State.SUSCEPTIBLE, attributes=None):
+    def __init__(self, agent_id):
         """
         Base class for an agent in the simulation.
 
@@ -26,8 +12,6 @@ class BaseAgent:
         :param attributes: Dictionary of additional attributes for the agent.
         """
         self.agent_id = agent_id
-        self.state = initial_state
-        self.attributes = attributes or {}
         self.history = []  # Records state transitions for analysis
 
     def transition(self, new_state, reason=None):

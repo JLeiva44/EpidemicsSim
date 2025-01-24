@@ -1,17 +1,16 @@
 from epidemics_sim.agents.base_agent import BaseAgent
-from epidemics_sim.agents.base_agent import State
-
+from epidemics_sim.agents.states import State
+from epidemics_sim.agents.state_manager import StateManager
+import random
 class HumanAgent(BaseAgent):
     def __init__(
         self, agent_id, age, gender, occupation, household_id, municipio,
-        infection_status=None, comorbidities=[], attributes={},
-        initial_state=State.SUSCEPTIBLE, consultorio=None, policlinico=None
+        infection_status={"state": State.SUSCEPTIBLE, "severity": None}, comorbidities=[], attributes={}, consultorio=None, policlinico=None
     ):
         """
         Represents a human agent with attributes relevant for epidemic simulations.
 
         :param agent_id: Unique identifier for the agent.
-        :param initial_state: Initial state of the agent (e.g., SUSCEPTIBLE).
         :param age: Age of the agent.
         :param gender: Gender of the agent (e.g., 'male', 'female', 'other').
         :param occupation: Occupation of the agent (e.g., 'student', 'worker', 'retired').
@@ -23,14 +22,14 @@ class HumanAgent(BaseAgent):
         :param consultorio: Assigned consultorio (primary healthcare unit).
         :param policlinico: Assigned policlínico (secondary healthcare unit).
         """
-        super().__init__(agent_id, initial_state, attributes)
+        super().__init__(agent_id, attributes)
         self.age = age
         self.gender = gender
         self.occupation = occupation
         self.household_id = household_id
         self.municipio = municipio
         self.comorbidities = comorbidities or []
-        self.infection_status = infection_status or {"state": initial_state, "severity": None}
+        self.infection_status = infection_status
         self.days_infected = 0  # Days since infection (reset upon recovery)
         self.vaccinated = False
         self.mask_usage = False
@@ -38,23 +37,8 @@ class HumanAgent(BaseAgent):
         self.consultorio = consultorio
         self.policlinico = policlinico
 
-    @property
-    def is_infected(self):
-        return self.infection_status["state"] == State.INFECTED
 
-    @property
-    def is_critical(self):
-        return self.infection_status["state"] == "critical"
-
-    @property
-    def is_recovered(self):
-        return self.infection_status["state"] == State.RECOVERED
-
-    @property
-    def is_deceased(self):
-        return self.infection_status["state"] == State.DECEASED
-
-    def progress_infection(self, severity_func, mortality_rate):
+    def progress_infection(self,  ):
         """
         Progress the infection state for this agent.
 
