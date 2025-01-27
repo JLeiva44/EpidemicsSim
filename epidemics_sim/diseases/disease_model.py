@@ -1,18 +1,23 @@
 import random
 from abc import ABC, abstractmethod
+from epidemics_sim.agents.base_agent import State
 
 class DiseaseModel(ABC):
-    def __init__(self, transmission_rate, recovery_rate, mortality_rate):
+    def __init__(self, name, transmission_rate, incubation_period, asymptomatic_probability, base_mortality_rate):
         """
         Base class for diseases transmitted by contact.
 
+        :param name: Name of the disease (e.g., "COVID-19").
         :param transmission_rate: Probability of transmission per contact.
-        :param recovery_rate: Probability of recovery per day.
-        :param mortality_rate: Probability of death if in critical condition.
+        :param incubation_period: Number of days before symptoms or contagion begins.
+        :param asymptomatic_probability: Probability of an agent being asymptomatic.
+        :param base_mortality_rate: Base mortality rate for critical cases.
         """
+        self.name = name
         self.transmission_rate = transmission_rate
-        self.recovery_rate = recovery_rate
-        self.mortality_rate = mortality_rate
+        self.incubation_period = incubation_period
+        self.asymptomatic_probability = asymptomatic_probability
+        self.base_mortality_rate = base_mortality_rate
 
     def propagate(self, daily_interactions):
         """
@@ -41,12 +46,17 @@ class DiseaseModel(ABC):
         :param source: Source agent.
         :param target: Target agent.
         """
-        if target.infection_status["state"] == "susceptible" and not target.immune:
+        if target.state == State.SUSCEPTIBLE and not target.immune:
             transmission_probability = self.calculate_transmission_probability(source, target)
             if random.random() < transmission_probability:
-                target.infection_status["state"] = "infected"
+                target.transition(State.INFECTED, reason=f"Infected by {self.name}")
+                target.infection_status.update({
+                    "disease": self.name,
+                    "contagious": False,
+                    "severity": None,
+                    "days_infected": 0
+                })
 
-    @abstractmethod
     def calculate_transmission_probability(self, source, target):
         """
         Calculate the transmission probability specific to the disease.
@@ -55,41 +65,56 @@ class DiseaseModel(ABC):
         :param target: Target agent.
         :return: Transmission probability.
         """
-        pass
+        probability = self.transmission_rate
 
-    def update_states(self, agents):
+        # Adjust for vaccination status
+        if target.vaccinated:
+            probability *= 0.5
+
+        # Adjust for mask usage
+        if source.mask_usage or target.mask_usage:
+            probability *= 0.7
+
+        return probability
+
+    def progress_infection(self, agent):
         """
-        Update the state of all agents, progressing infections.
+        Handle the progression of the infection for the given agent.
 
-        :param agents: List of agents in the simulation.
+        :param agent: The agent whose infection state is being progressed.
         """
-        for agent in agents:
-            if agent.infection_status["state"] == "infected":
-                self._progress_infection(agent)
+        agent.infection_status["days_infected"] += 1
+        days_infected = agent.infection_status["days_infected"]
 
-    def _progress_infection(self, agent):
-        """
-        Progress the infection state of an agent, including recovery and mortality.
-
-        :param agent: The agent to update.
-        """
-        agent.days_infected += 1
-
-        # Check for recovery
-        if random.random() < self.recovery_rate:
-            agent.infection_status["state"] = "recovered"
-            agent.immune = True
+        # Handle incubation period
+        if days_infected <= self.incubation_period:
+            agent.infection_status["contagious"] = False
             return
 
-        # Check for mortality
-        if agent.infection_status.get("severity", "mild") == "critical":
-            if random.random() < self.mortality_rate:
-                agent.infection_status["state"] = "deceased"
+        # End of incubation: determine symptoms or asymptomatic status
+        if days_infected == self.incubation_period + 1:
+            agent.infection_status["contagious"] = True
+            if random.random() < self.asymptomatic_probability:
+                agent.infection_status["severity"] = "asymptomatic"
+                agent.transition(State.ASYMPTOMATIC, reason=f"{self.name} infection")
+            else:
+                severity = self.determine_severity(agent)
+                agent.infection_status["severity"] = severity
+                agent.transition(State.SYMPTOMATIC, reason=f"{self.name} infection ({severity})")
+
+        # Handle recovery or death
+        if days_infected >= self.incubation_period + 10:
+            if agent.infection_status["severity"] == "critical":
+                if random.random() < self.base_mortality_rate:
+                    agent.transition(State.DECEASED, reason=f"{self.name} critical condition")
+                    return
+            agent.transition(State.RECOVERED, reason=f"{self.name} recovery")
+            agent.immune = True
 
     @abstractmethod
     def determine_severity(self, agent):
         """
-        Determine the severity of the disease for an infected agent.
+        Determine the severity of the disease for an agent.
 
         :param agent: The agent whose severity is being determined.
         :return: Severity level ('mild', 'moderate', 'severe', 'critical').
