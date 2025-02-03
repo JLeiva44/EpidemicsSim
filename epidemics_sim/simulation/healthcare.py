@@ -10,6 +10,7 @@ class HealthcareSystem:
         :param municipalities: Dictionary containing municipality data with healthcare structures.
         :param recovery_rates: Recovery rates for each level of care.
         :param mortality_rates: Mortality rates for each level of care.
+        :param state_manager: Instance of StateManager to handle state transitions.
         """
         self.municipalities = municipalities
         self.consultorios = self._initialize_units("consultorios", Consultorio)
@@ -24,14 +25,15 @@ class HealthcareSystem:
 
         :param key: Key to access the number of units per municipality.
         :param unit_class: Class of the healthcare unit to instantiate.
+        :param state_manager: Instance of StateManager to handle state transitions.
         :return: Dictionary of initialized units.
         """
-        key1 = "infraestructura_salud"
         units = {}
         for municipio, data in self.municipalities.items():
             num_units = data["infraestructura_salud"].get(key, 0)
             units[municipio] = [
-                unit_class(f"{unit_class.__name__}_{i}", municipio) for i in range(num_units)
+                unit_class(f"{unit_class.__name__}_{i}", municipio)
+                for i in range(num_units)
             ]
         return units
 
@@ -83,17 +85,18 @@ class HealthcareUnit(ABC):
     def handle_agent(self, agent, recovery_rate, mortality_rate, disease_model):
         pass
 
-    def daily_process(self):
-        """
-        Process daily operations, treating patients.
-        """
-        for patient in self.patients:
-            if random.random() < self.recovery_rate:
-                patient.infection_status["state"] = "recovered"
-                patient.immune = True
-            elif random.random() < self.mortality_rate:
-                patient.infection_status["state"] = "deceased"
-        self.patients = [p for p in self.patients if p.infection_status["state"] == "infected"]
+    # def daily_process(self):
+    #     """
+    #     Process daily operations, treating patients by delegating to the state manager.
+    #     """
+    #     for patient in self.patients:
+    #         self.state_manager.evaluate_state(
+    #             patient,
+    #             recovery_rate=self.recovery_rate,
+    #             mortality_rate=self.mortality_rate
+    #         )
+    #     # Remove patients who are no longer infected
+    #     self.patients = [p for p in self.patients if p.state == State.INFECTED]
 
 class Consultorio(HealthcareUnit):
     def handle_agent(self, agent, recovery_rate, mortality_rate, disease_model):
@@ -144,15 +147,3 @@ class Hospital(HealthcareUnit):
         if len(self.patients) < self.capacity:
             self.patients.append(agent)
         return True
-
-    def daily_process(self):
-        """
-        Process daily operations, treating patients at the hospital level.
-        """
-        for patient in self.patients:
-            if random.random() < self.recovery_rate:
-                patient.infection_status["state"] = "recovered"
-                patient.immune = True
-            elif random.random() < self.mortality_rate:
-                patient.infection_status["state"] = "deceased"
-        self.patients = [p for p in self.patients if p.infection_status["state"] == "infected"]

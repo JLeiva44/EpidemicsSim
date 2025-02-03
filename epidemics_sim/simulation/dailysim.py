@@ -2,6 +2,7 @@ import random
 from epidemics_sim.simulation.clusters import CityClusterGenerator
 from epidemics_sim.simulation.healthcare import HealthcareSystem
 from epidemics_sim.simulation.simulation_utils import SimulationAnalyzer
+from epidemics_sim.agents.base_agent import State
 
 class DailySimulation:
     def __init__(self, agents, cluster_generator, transport, config, disease_model, policies, healthcare_system, analyzer, initial_infected=50):
@@ -38,9 +39,7 @@ class DailySimulation:
         :param initial_infected: Number of agents to infect initially.
         """
         infected_agents = random.sample(self.agents, initial_infected)
-        for agent in infected_agents:
-            agent.infection_status["state"] = "infected"
-            agent.days_infected = 0
+        self.disease_model.initialize_infections(infected_agents)
 
     def simulate(self, days):
         """
@@ -56,16 +55,14 @@ class DailySimulation:
             daily_summary = self.simulate_day()
             simulation_results.append(daily_summary)
 
-            # Update disease progression based on daily interactions
-            self.disease_model.update_states(self.agents)
-
-            # Notify the healthcare system about new infections or changes
+            # Propagate and progress the infection for all agents
             for agent in self.agents:
-                if agent.is_infected and not self.healthcare_system.is_registered(agent):
-                    self.healthcare_system.notify_infection(agent)
+                self.disease_model.progress_infection(agent)
 
-            # Perform daily healthcare operations
-            self.healthcare_system.daily_operations()
+            # Sacar a los agentes muertos 
+            # # 2️⃣ ELIMINAR AGENTES MUERTOS 🔥
+            self.agents = [agent for agent in self.agents if agent.infection_status['state'] != State.DECEASED]
+   
 
             # Record daily statistics
             self.analyzer.record_daily_stats(self.agents)
@@ -74,7 +71,7 @@ class DailySimulation:
         report = self.analyzer.generate_report()
         self.analyzer.plot_disease_progression()
 
-        return simulation_results
+        return report
 
     def simulate_day(self):
         """
@@ -102,7 +99,7 @@ class DailySimulation:
         """
         interactions = []
         interactions.extend(self._simulate_cluster_interactions(self.clusters["home"], "morning"))
-        interactions.extend(self.transport.simulate_transport("morning"))
+        #interactions.extend(self.transport.simulate_transport("morning"))
         return interactions
 
     def _simulate_daytime(self):
@@ -123,7 +120,7 @@ class DailySimulation:
         :return: A list of interactions for the evening.
         """
         interactions = []
-        interactions.extend(self.transport.simulate_transport("evening"))
+        #interactions.extend(self.transport.simulate_transport("evening"))
         interactions.extend(self._simulate_cluster_interactions(self.clusters["shopping"], "evening"))
         return interactions
 

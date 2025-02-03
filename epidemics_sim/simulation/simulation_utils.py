@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from epidemics_sim.agents.base_agent import State
 
 class SimulationAnalyzer:
     def __init__(self):
@@ -9,18 +10,25 @@ class SimulationAnalyzer:
 
     def record_daily_stats(self, agents):
         """
-        Record statistics for the current day, focusing on the disease progression.
+        Record statistics for the current day, focusing on disease progression.
 
         :param agents: List of agents in the simulation.
         """
         stats = {
-            "susceptible": sum(1 for agent in agents if agent.infection_status["state"] == "susceptible"),
-            "infected": sum(1 for agent in agents if agent.infection_status["state"] == "infected"),
-            "recovered": sum(1 for agent in agents if agent.infection_status["state"] == "recovered"),
-            "immune": sum(1 for agent in agents if agent.immune),
-            "deceased": sum(1 for agent in agents if agent.infection_status["state"] == "deceased"),
+            "susceptible": sum(1 for agent in agents if agent.infection_status["state"] == State.SUSCEPTIBLE),
+            "infected": sum(1 for agent in agents if agent.infection_status["state"] == State.INFECTED),
+            "recovered": sum(1 for agent in agents if agent.infection_status["state"] == State.RECOVERED),
+            "immune": sum(1 for agent in agents if agent.immune),  # Se mantiene como atributo separado
+            "deceased": sum(1 for agent in agents if agent.infection_status["state"] == State.DECEASED),
         }
         self.daily_stats.append(stats)
+
+        # ✅ Imprimir correctamente las estadísticas
+        print(f"Susceptibles: {stats['susceptible']}")
+        print(f"Infectados: {stats['infected']}")
+        print(f"Recuperados: {stats['recovered']}")
+        print(f"Fallecidos: {stats['deceased']}")
+        print(f"Inmunes: {stats['immune']}")  # 🔹 Corrección en la clave del diccionario
 
     def generate_report(self):
         """
@@ -28,6 +36,9 @@ class SimulationAnalyzer:
 
         :return: A dictionary containing cumulative statistics.
         """
+        if not self.daily_stats:
+            return {"message": "No data recorded yet."}
+
         report = {
             "total_days": len(self.daily_stats),
             "total_susceptible": sum(day["susceptible"] for day in self.daily_stats),
@@ -42,6 +53,10 @@ class SimulationAnalyzer:
         """
         Plot the daily statistics related to disease progression using matplotlib.
         """
+        if not self.daily_stats:
+            print("No data available for plotting.")
+            return
+
         days = range(1, len(self.daily_stats) + 1)
         susceptible = [day["susceptible"] for day in self.daily_stats]
         infected = [day["infected"] for day in self.daily_stats]
@@ -65,41 +80,3 @@ class SimulationAnalyzer:
 
         plt.tight_layout()
         plt.show()
-
-# Example usage
-if __name__ == "__main__":
-    class Agent:
-        """
-        Mock Agent class for testing purposes.
-        """
-        def __init__(self, state, immune=False):
-            self.infection_status = {"state": state}
-            self.immune = immune
-
-    # Example agents
-    agents = (
-        [Agent("susceptible") for _ in range(500)] +
-        [Agent("infected") for _ in range(100)] +
-        [Agent("recovered", immune=True) for _ in range(50)] +
-        [Agent("deceased") for _ in range(10)]
-    )
-
-    analyzer = SimulationAnalyzer()
-
-    # Simulate daily stats recording
-    for day in range(10):
-        # Randomly change states for testing (mock progression)
-        for agent in agents:
-            if agent.infection_status["state"] == "infected" and random.random() < 0.2:
-                agent.infection_status["state"] = "recovered"
-                agent.immune = True
-            elif agent.infection_status["state"] == "susceptible" and random.random() < 0.1:
-                agent.infection_status["state"] = "infected"
-
-        analyzer.record_daily_stats(agents)
-
-    # Generate report and plot
-    report = analyzer.generate_report()
-    print("Simulation Report:", report)
-
-    analyzer.plot_disease_progression()

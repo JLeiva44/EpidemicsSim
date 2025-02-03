@@ -1,11 +1,10 @@
 from epidemics_sim.agents.base_agent import BaseAgent
-from epidemics_sim.agents.states import State
-from epidemics_sim.agents.state_manager import StateManager
+from epidemics_sim.agents.base_agent import State
 import random
 class HumanAgent(BaseAgent):
     def __init__(
-        self, agent_id, age, gender, occupation, household_id, municipio,
-        infection_status={"state": State.SUSCEPTIBLE, "severity": None}, comorbidities=[], attributes={}, consultorio=None, policlinico=None
+        self, agent_id, age, gender, occupation, household_id, municipio, disease_model,
+    comorbidities=[], attributes={}, consultorio=None, policlinico=None
     ):
         """
         Represents a human agent with attributes relevant for epidemic simulations.
@@ -22,52 +21,123 @@ class HumanAgent(BaseAgent):
         :param consultorio: Assigned consultorio (primary healthcare unit).
         :param policlinico: Assigned policlínico (secondary healthcare unit).
         """
-        super().__init__(agent_id, attributes)
+        super().__init__(agent_id)
         self.age = age
         self.gender = gender
         self.occupation = occupation
         self.household_id = household_id
         self.municipio = municipio
         self.comorbidities = comorbidities or []
-        self.infection_status = infection_status
+        #self.infection_status = infection_status
         self.days_infected = 0  # Days since infection (reset upon recovery)
         self.vaccinated = False
         self.mask_usage = False
         self.immune = False
         self.consultorio = consultorio
         self.policlinico = policlinico
+        self.asymtomathic = None
+        self.mortality_rate = self._calculate_base_mortality_rate()
+        self.disease_model = disease_model
+        self.infection_status ={
+                "disease": "",
+                "state": State.SUSCEPTIBLE,
+                "severity": None,
+                "contagious": None,  # Not contagious during incubation
+                "days_infected": 0,
+                "asymptomatic": None,
+                "immunity_days": 0,
+            }
 
 
-    def progress_infection(self,  ):
+    def _calculate_base_mortality_rate(self):
         """
-        Progress the infection state for this agent.
+        Calculate the agent's base mortality rate based on their biological age.
 
-        :param severity_func: Function to determine severity of the infection.
-        :param mortality_rate: Probability of death if in critical condition.
+        Biological age is defined as:
+        biological_age = historical_age + 5 * (# of comorbidities)
+
+        The base mortality rate is then derived from this biological age:
+        - 0-30 years: 0.01%
+        - 31-50 years: 0.1%
+        - 51-70 years: 1%
+        - 71+ years: 5%
+
+        :return: Base mortality rate as a decimal.
         """
-        if self.is_infected:
-            self.days_infected += 1
+        biological_age = self.age + 5 * len(self.comorbidities)
+        if biological_age <= 30:
+            return 0.0001
+        elif biological_age <= 50:
+            return 0.001
+        elif biological_age <= 70:
+            return 0.01
+        else:
+            return 0.05
 
-            if self.days_infected == 5:
-                # Determine severity after 5 days
-                self.infection_status["severity"] = severity_func()
-                if self.infection_status["severity"] in ["severe", "critical"]:
-                    self.infection_status["state"] = "critical"
-
-            elif self.days_infected == 10:
-                # Recovery or death after 10 days
-                if self.is_critical and random.random() < mortality_rate:
-                    self.infection_status["state"] = State.DECEASED
-                else:
-                    self.infection_status["state"] = State.RECOVERED
-                    self.immune = True
-
-    def reset_infection(self):
+    def update_mortality_rate(self, disease_mortality_rate, vaccine_efficacy=0.0):
         """
-        Reset infection-related attributes upon recovery.
+        Update the agent's mortality rate based on base mortality and disease mortality rates.
+
+        :param disease_mortality_rate: Disease-specific mortality rate (0 to 1).
+        :param vaccine_efficacy: Reduction in mortality due to vaccination (0 to 1). Default is 0 (no vaccination).
         """
-        self.infection_status = {"state": State.SUSCEPTIBLE, "severity": None}
-        self.days_infected = 0
+        base_rate = self._calculate_base_mortality_rate()
+
+        # Combine using the log-based formula
+        combined_rate = 1 - (1 - base_rate) * (1 - disease_mortality_rate)
+
+        # Apply vaccine efficacy if vaccinated
+        if self.vaccinated:
+            combined_rate *= (1 - vaccine_efficacy)
+
+        self.mortality_rate = combined_rate
+
+
+
+    def reset_agent(self):
+        """
+        Reset the agent to a susceptible state after recovery.
+
+        :param agent: The recovered agent.
+        """
+        self.reset_infection()
+
+    def enforce_policies(self, policies):
+        pass
+    
+    def enforce_isolation(self, days):
+        """
+        Enforce isolation rules on an agent, preventing state progression.
+
+        :param agent: The agent to isolate.
+        :param days: Number of days the agent will be isolated.
+        """
+        self.isolated = True
+        self.isolation_days = days
+
+    def manage_vaccination(self,efficacy):
+        """
+        Manage vaccination effects on an agent.
+
+        :param agent: The agent being vaccinated.
+        :param efficacy: Efficacy of the vaccine in reducing transmission/severity.
+        """
+        if random.random() < efficacy:
+            self.immune = True
+            self.transition(State.RECOVERED_IMMUNE, reason="Vaccination")
+
+    def release_isolation(self):
+        """
+        Release an agent from isolation once the period ends.
+
+        :param agent: The agent to release.
+        """
+        if self.isolated:
+            self.isolation_days -= 1
+            if self.isolation_days <= 0:
+                self.isolated = False
+                self.isolation_days = 0
+
 
     def __repr__(self):
         return (
@@ -77,3 +147,6 @@ class HumanAgent(BaseAgent):
             f"comorbidities={self.comorbidities}, severity={self.infection_status['severity']}, "
             f"immune={self.immune})"
         )
+
+
+# Example functions for severity and recovery

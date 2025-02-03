@@ -101,10 +101,10 @@ class CityClusterGenerator:
         :return: Dictionary containing all generated clusters.
         """
         return {
-            "home": self.generate_home_clusters(agents),
             "work": self.generate_work_clusters(agents),
             "school": self.generate_school_clusters(agents),
             "shopping": self.generate_shopping_clusters(agents),
+            "home": self.generate_home_clusters(agents),
         }
 
     def _get_agents_by_municipio(self, agents, municipio):
@@ -120,6 +120,9 @@ class CityClusterGenerator:
     def generate_home_clusters(self, agents):
         """
         Generate home clusters, where each subcluster represents a household.
+        Se agrupan los agentes por municipio y se extraen hogares de tamaño aleatorio
+        según la distribución configurada. Se asegura que cada hogar tenga al menos un adulto;
+        si no es posible, se rompe el ciclo para ese municipio para evitar un bucle infinito.
 
         :param agents: List of agents to assign to home clusters.
         :return: A ClusterWithSubclusters instance for home.
@@ -132,8 +135,10 @@ class CityClusterGenerator:
             household_distribution = list(data["hogares_por_tamano"].values())
 
             unassigned_agents = municipio_agents.copy()
-
+            iteration = 0
             while unassigned_agents:
+                iteration += 1
+                # Seleccionar el tamaño del hogar según la distribución
                 size_key = random.choices(household_sizes, household_distribution)[0]
                 size_mapping = {
                     "1_persona": 1,
@@ -145,20 +150,78 @@ class CityClusterGenerator:
                 size = size_mapping[size_key]
                 size = min(size, len(unassigned_agents))
 
+                # Extraer el grupo de agentes para el hogar
                 household_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                # Ensure at least one adult in the household
+                # Verificar que el hogar tenga al menos un adulto
                 if not any(agent.age >= 18 for agent in household_agents):
                     adults = [agent for agent in unassigned_agents if agent.age >= 18]
                     if adults:
-                        adult = adults.pop(0)
+                        adult = adults[0]
                         household_agents[-1] = adult
                         unassigned_agents.remove(adult)
+                        print(f"Se asignó un adulto en municipio {municipio} en iteración {iteration}.")
+                    else:
+                        print(f"Advertencia: No hay suficientes adultos en {municipio} para completar el hogar.")
+                        # Romper el ciclo para este municipio para evitar un bucle infinito
+                        break
 
-                home_subclusters.append(Subcluster(household_agents, ["morning", "evening", "night"], topology="complete"))
+                home_subclusters.append(
+                    Subcluster(household_agents, active_periods=["morning", "evening", "night"], topology="complete")
+                )
 
-        return ClusterWithSubclusters(home_subclusters, "home")
+                # Verificar que la lista se esté reduciendo
+                if iteration > 10000:
+                    print(f"Advertencia: Demasiadas iteraciones en {municipio}. Posible bucle infinito.")
+                    break
+
+            print(f"Finalizado la generación de hogares para {municipio}: {len(home_subclusters)} hogares generados.")
+
+        return ClusterWithSubclusters(home_subclusters, cluster_type="home")
+
+    # def generate_home_clusters(self, agents):
+    #     """
+    #     Generate home clusters, where each subcluster represents a household.
+
+    #     :param agents: List of agents to assign to home clusters.
+    #     :return: A ClusterWithSubclusters instance for home.
+    #     """
+    #     home_subclusters = []
+
+    #     for municipio, data in self.municipal_data.items():
+    #         municipio_agents = self._get_agents_by_municipio(agents, municipio)
+    #         household_sizes = list(data["hogares_por_tamano"].keys())
+    #         household_distribution = list(data["hogares_por_tamano"].values())
+
+    #         unassigned_agents = municipio_agents.copy()
+
+    #         while unassigned_agents:
+    #             size_key = random.choices(household_sizes, household_distribution)[0]
+    #             size_mapping = {
+    #                 "1_persona": 1,
+    #                 "2_personas": 2,
+    #                 "3_personas": 3,
+    #                 "4_personas": 4,
+    #                 "5_personas_o_mas": random.randint(5, 8)
+    #             }
+    #             size = size_mapping[size_key]
+    #             size = min(size, len(unassigned_agents))
+
+    #             household_agents = unassigned_agents[:size]
+    #             unassigned_agents = unassigned_agents[size:]
+
+    #             # Ensure at least one adult in the household
+    #             if not any(agent.age >= 18 for agent in household_agents):
+    #                 adults = [agent for agent in unassigned_agents if agent.age >= 18]
+    #                 if adults:
+    #                     adult = adults.pop(0)
+    #                     household_agents[-1] = adult
+    #                     unassigned_agents.remove(adult)
+
+    #             home_subclusters.append(Subcluster(household_agents, ["morning", "evening", "night"], topology="complete"))
+
+    #    return ClusterWithSubclusters(home_subclusters, "home")
 
     def generate_work_clusters(self, agents):
         """

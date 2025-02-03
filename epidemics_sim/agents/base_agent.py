@@ -1,4 +1,20 @@
 
+from enum import Enum
+
+class State(Enum):
+    SUSCEPTIBLE = 0 #
+    INFECTED = 1 # 
+    RECOVERED = 2 #
+    DECEASED = 4 #
+    ASYMPTOMATIC = 5
+    RECOVERED_IMMUNE = 6
+
+class Severity(Enum):
+    NORMAL = 0
+    MID = 1
+    SEVERE = 2
+
+    
 
 
 
@@ -21,8 +37,8 @@ class BaseAgent:
         :param new_state: The new state of the agent.
         :param reason: Reason for the state transition (optional).
         """
-        self.history.append((self.state, new_state, reason))
+        self.history.append((self.infection_status['state'], new_state, reason))
         self.state = new_state
 
     def __repr__(self):
-        return f"BaseAgent(id={self.agent_id}, state={self.state}, attributes={self.attributes})"
+        return f"BaseAgent(id={self.agent_id}, state={self.infection_status['state']}, attributes={self.attributes})"

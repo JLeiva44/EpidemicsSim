@@ -54,7 +54,8 @@ class SimulationController:
         generator = SyntheticPopulationGenerator(
             demographics=self.demographics
         )
-        #agents = generator.generate_population()
+        agents = generator.generate_population()
+        generator.save_population(agents,'population.pkl')
         agents = generator.load_population('population.pkl')
         return agents
 
@@ -93,10 +94,10 @@ class SimulationController:
             self.analyzer.record_daily_stats(self.agents)
 
         # Generate results
-        report = self.analyzer.generate_report()
-        self.analyzer.plot_statistics()
+        # report = self.analyzer.generate_report()
+        # self.analyzer.plot_statistics()
 
-        return report
+        return simulation_results
 
 # # Example configuration
 # example_demographics = {
