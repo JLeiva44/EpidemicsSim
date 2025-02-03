@@ -89,9 +89,9 @@ class SimulationController:
         # Run simulation for the specified number of days
         simulation_results = daily_simulation.simulate(self.simulation_days)
 
-        # Record daily statistics
-        for _ in range(self.simulation_days):
-            self.analyzer.record_daily_stats(self.agents)
+        # # Record daily statistics
+        # for _ in range(self.simulation_days):
+        #     self.analyzer.record_daily_stats(self.agents)
 
         # Generate results
         # report = self.analyzer.generate_report()

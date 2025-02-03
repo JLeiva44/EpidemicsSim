@@ -1,8 +1,8 @@
 {
-    "total_population": 403949,
+    "total_population": 23000,
     "municipios": {
         "Arroyo Naranjo": {
-            "poblacion_total": 1000,
+            "poblacion_total": 21000,
             "hogares_por_tamano": {
                 "1_persona": 14.3,
                 "2_personas": 25.5,
@@ -47,7 +47,7 @@
             }
         },
         "Boyeros": {
-            "poblacion_total": 1400,
+            "poblacion_total":2000,
             "hogares_por_tamano": {
                 "1_persona": 15.2,
                 "2_personas": 26.1,
