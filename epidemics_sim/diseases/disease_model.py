@@ -62,7 +62,7 @@ class DiseaseModel(ABC):
         """
         for time_period, interactions in daily_interactions.items():
             for agent1, agent2 in interactions:  # Each interaction is a tuple (agent1, agent2)
-                if agent1.infection_status["state"] == State.INFECTED or agent2.infection_status["state"] == State.INFECTED:
+                if not agent1.is_isolated and not agent2.is_isolated and (agent1.infection_status["state"] == State.INFECTED or agent2.infection_status["state"] == State.INFECTED):
                     self._evaluate_transmission((agent1, agent2))
 
     def _evaluate_transmission(self, interaction):
@@ -110,7 +110,7 @@ class DiseaseModel(ABC):
 
         # Adjust for vaccination status
         if target.vaccinated:
-            probability *= 0.5
+            probability *= 0.5 # ver si pongo esto : (1 - target.vaccine_effectiveness)
 
         # Adjust for mask usage
         if source.mask_usage or target.mask_usage:

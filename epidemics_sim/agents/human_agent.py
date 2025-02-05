@@ -33,6 +33,7 @@ class HumanAgent(BaseAgent):
         self.vaccinated = False
         self.mask_usage = False
         self.immune = False
+        self.is_isolated = False
         self.consultorio = consultorio
         self.policlinico = policlinico
         self.asymtomathic = None
@@ -112,7 +113,7 @@ class HumanAgent(BaseAgent):
         :param agent: The agent to isolate.
         :param days: Number of days the agent will be isolated.
         """
-        self.isolated = True
+        self.is_isolated = True
         self.isolation_days = days
 
     def manage_vaccination(self,efficacy):

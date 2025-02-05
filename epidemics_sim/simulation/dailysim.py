@@ -41,12 +41,11 @@ class DailySimulation:
         infected_agents = random.sample(self.agents, initial_infected)
         self.disease_model.initialize_infections(infected_agents)
 
-    def simulate(self, days, interval="daily"):
+    def simulate(self, days):
         """
         Simulate interactions over multiple days.
 
         :param days: Number of days to simulate.
-        :param interval: Interval to aggregate statistics ('daily', 'weekly', 'monthly').
         :return: Summary of interactions and disease progression over the simulation period.
         """
         simulation_results = []
@@ -54,32 +53,64 @@ class DailySimulation:
         for day in range(days):
             print(f"Simulating Day {day + 1}...")
 
-            # Simular interacciones y propagación
+            # 1️⃣ Simular interacciones y propagación
             daily_summary = self.simulate_day()
             simulation_results.append(daily_summary)
 
-            # 1️⃣ Progresar la infección para todos los agentes
+            # 2️⃣ Progresar la infección en los agentes
             for agent in self.agents:
                 self.disease_model.progress_infection(agent)
 
-            # 2️⃣ 🔥 REGISTRAR ESTADÍSTICAS ANTES de eliminar agentes muertos
-            self.analyzer.record_daily_stats(self.agents)
+            # 3️⃣ Ejecutar las operaciones del sistema de salud
+            self.healthcare_system.daily_operations(self.agents, self.clusters)
 
-            # 3️⃣ 🏴 REMOVER AGENTES MUERTOS DESPUÉS de registrar estadísticas
+            # 4️⃣ Eliminar agentes muertos después de registrar estadísticas
             self.agents = [agent for agent in self.agents if agent.infection_status['state'] != State.DECEASED]
 
-        # 4️⃣ GENERAR REPORTE FINAL 🔍
+        # 5️⃣ Generar reporte y gráficos
         report = self.analyzer.generate_report()
-        
-        # 5️⃣ 🔥 Mostrar estadísticas según el intervalo seleccionado
-        if interval in ["daily", "weekly", "monthly"]:
-            stats = self.analyzer.compute_temporal_stats(interval)
-            print(f"\n📊 {interval.capitalize()} Stats: {stats}")
-
-        # 6️⃣ 📊 Graficar la progresión de la enfermedad
         self.analyzer.plot_disease_progression()
 
         return report
+    # def simulate(self, days, interval="daily"):
+    #     """
+    #     Simulate interactions over multiple days.
+
+    #     :param days: Number of days to simulate.
+    #     :param interval: Interval to aggregate statistics ('daily', 'weekly', 'monthly').
+    #     :return: Summary of interactions and disease progression over the simulation period.
+    #     """
+    #     simulation_results = []
+
+    #     for day in range(days):
+    #         print(f"Simulating Day {day + 1}...")
+
+    #         # Simular interacciones y propagación
+    #         daily_summary = self.simulate_day()
+    #         simulation_results.append(daily_summary)
+
+    #         # 1️⃣ Progresar la infección para todos los agentes
+    #         for agent in self.agents:
+    #             self.disease_model.progress_infection(agent)
+
+    #         # 2️⃣ 🔥 REGISTRAR ESTADÍSTICAS ANTES de eliminar agentes muertos
+    #         self.analyzer.record_daily_stats(self.agents)
+
+    #         # 3️⃣ 🏴 REMOVER AGENTES MUERTOS DESPUÉS de registrar estadísticas
+    #         self.agents = [agent for agent in self.agents if agent.infection_status['state'] != State.DECEASED]
+
+    #     # 4️⃣ GENERAR REPORTE FINAL 🔍
+    #     report = self.analyzer.generate_report()
+        
+    #     # 5️⃣ 🔥 Mostrar estadísticas según el intervalo seleccionado
+    #     if interval in ["daily", "weekly", "monthly"]:
+    #         stats = self.analyzer.compute_temporal_stats(interval)
+    #         print(f"\n📊 {interval.capitalize()} Stats: {stats}")
+
+    #     # 6️⃣ 📊 Graficar la progresión de la enfermedad
+    #     self.analyzer.plot_disease_progression()
+
+    #     return report
     # def simulate(self, days):
     #     """
     #     Simulate interactions over multiple days.

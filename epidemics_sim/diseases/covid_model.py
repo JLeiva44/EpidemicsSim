@@ -30,7 +30,7 @@ class CovidModel(DiseaseModel):
             immunity_duration=0,  # COVID-19: 90 días de inmunidad
         )
 
-    def determine_severity(self, agent):
+    def determine_severity(self, agent): # TODO: ver si el agente esta vacunado
         """
         Determine the severity of COVID-19 based on the agent's mortality rate.
         
