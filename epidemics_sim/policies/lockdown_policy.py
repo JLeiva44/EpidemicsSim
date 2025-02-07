@@ -1,7 +1,7 @@
 from epidemics_sim.policies.base_policy import Policy
 
 class LockdownPolicy(Policy):
-    def __init__(self, restricted_clusters):
+    def __init__(self, restricted_clusters = ["work", "school"]):
         """
         Initialize the lockdown policy.
 
@@ -11,36 +11,46 @@ class LockdownPolicy(Policy):
 
     def enforce(self, agents, clusters):
         """
-        Apply lockdown by disabling interactions in specific clusters.
+        Apply lockdown by restricting interactions in specific clusters.
 
         :param agents: List of agents in the simulation.
-        :param clusters: Dictionary of clusters in the simulation.
+        :param clusters: Dictionary of clusters.
         """
-        for cluster_type in self.restricted_clusters:
-            if cluster_type in clusters:
-                clusters[cluster_type] = []
-        print(f"Lockdown enforced on clusters: {self.restricted_clusters}.")
+        for cluster in clusters.values():
+            if cluster.cluster_type in self.restricted_clusters:
+                cluster.enforce_lockdown()
 
+        # for cluster_type in self.restricted_clusters:
+        #     if cluster_type in clusters:
+        #         for subcluster in clusters[cluster_type].subclusters:
+        #             subcluster.lockdown_active = True  # 🔒 Activar cuarentena en subclusters
+        #             for agent in subcluster.agents:
+        #                 agent.in_quarantine = True  # 🚨 Marcar a los agentes como en cuarentena
 
+        print(f"🚨 Lockdown enforced on clusters: {self.restricted_clusters}")
 
+    def delete(self, agents, clusters):
+        """
+        Apply lockdown by restricting interactions in specific clusters.
 
+        :param agents: List of agents in the simulation.
+        :param clusters: Dictionary of clusters.
+        """
+        for cluster in clusters.values():
+            if cluster.cluster_type in self.restricted_clusters:
+                cluster.remove_lockdown()
 
-# class Lockdown(BasePolicy):
-#     def __init__(self):
-#         """
-#         Specific implementation of a lockdown policy.
-#         """
-#         super().__init__(
-#             name="Lockdown",
-#             description="Restrict movement of agents to reduce interactions."
-#         )
+        # for cluster_type in self.restricted_clusters:
+        #     if cluster_type in clusters:
+        #         for subcluster in clusters[cluster_type].subclusters:
+        #             subcluster.lockdown_active = True  # 🔒 Activar cuarentena en subclusters
+        #             for agent in subcluster.agents:
+        #                 agent.in_quarantine = True  # 🚨 Marcar a los agentes como en cuarentena
 
-#     def apply(self, environment):
-#         """
-#         Apply lockdown by restricting agent movements in the environment.
+        print(f"🚨 Lockdown enforced on clusters: {self.restricted_clusters}")
 
-#         :param environment: An instance of BaseEnvironment or its subclasses.
-#         """
-#         for agent in environment.agents:
-#             agent.attributes["movement_restricted"] = True
-#         print(f"Lockdown applied to environment {environment.name}.")
+    def __str__(self):
+        return "Lockdown Policy"
+    
+    def __repr__(self):
+        return "Loackdown"

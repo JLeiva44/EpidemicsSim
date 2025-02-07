@@ -34,11 +34,13 @@ class HumanAgent(BaseAgent):
         self.mask_usage = False
         self.immune = False
         self.is_isolated = False
+        self.is_hospitalized = False
         self.consultorio = consultorio
         self.policlinico = policlinico
         self.asymtomathic = None
         self.mortality_rate = self._calculate_base_mortality_rate()
         self.disease_model = disease_model
+        self.incubation_period = 0
         self.infection_status ={
                 "disease": "",
                 "state": State.SUSCEPTIBLE,
@@ -91,8 +93,8 @@ class HumanAgent(BaseAgent):
         if self.vaccinated:
             combined_rate *= (1 - vaccine_efficacy)
 
-        self.mortality_rate = combined_rate
-
+        #self.mortality_rate = combined_rate
+        return combined_rate
 
 
     def reset_agent(self):

@@ -1,11 +1,9 @@
 import random
 from epidemics_sim.simulation.clusters import CityClusterGenerator
-from epidemics_sim.simulation.healthcare import HealthcareSystem
-from epidemics_sim.simulation.simulation_utils import SimulationAnalyzer
 from epidemics_sim.agents.base_agent import State
 
 class DailySimulation:
-    def __init__(self, agents, cluster_generator, transport, config, disease_model, policies, healthcare_system, analyzer, initial_infected=50):
+    def __init__(self, agents, cluster_generator, transport, config, disease_model, policies, healthcare_system, initial_infected=5):
         """
         Initialize the daily simulation controller.
 
@@ -26,7 +24,7 @@ class DailySimulation:
         self.disease_model = disease_model
         self.policies = policies
         self.healthcare_system = healthcare_system
-        self.analyzer = analyzer
+        #self.analyzer = analyzer
         self.clusters = self.cluster_generator.generate_clusters(self.agents)
 
         # Initialize infections
@@ -55,23 +53,35 @@ class DailySimulation:
 
             # 1️⃣ Simular interacciones y propagación
             daily_summary = self.simulate_day()
+            print(f"Daily Interactions: ")
+            print(f"morning: {len(daily_summary['morning'])}")
+            print(f"daytime: {len(daily_summary['daytime'])}")
+            print(f"evening: {len(daily_summary['evening'])}")
+            print(f"night: {len(daily_summary['night'])}")
             simulation_results.append(daily_summary)
+
+            # 2️⃣ Propagar enfermedad solo con los agentes activos
+            self.disease_model.propagate(daily_summary)
 
             # 2️⃣ Progresar la infección en los agentes
             for agent in self.agents:
-                self.disease_model.progress_infection(agent)
+                if agent.infection_status['state'] == State.INFECTED:
+                    self.disease_model.progress_infection(agent)
 
             # 3️⃣ Ejecutar las operaciones del sistema de salud
-            self.healthcare_system.daily_operations(self.agents, self.clusters)
+            self.healthcare_system.daily_operations(self.agents, self.clusters,sum([len(interactions) for interactions in daily_summary.values()]), day)
 
             # 4️⃣ Eliminar agentes muertos después de registrar estadísticas
             self.agents = [agent for agent in self.agents if agent.infection_status['state'] != State.DECEASED]
 
         # 5️⃣ Generar reporte y gráficos
-        report = self.analyzer.generate_report()
-        self.analyzer.plot_disease_progression()
-
-        return report
+        #report = self.healthcare_system.analyzer.generate_report()
+        self.healthcare_system.analyzer.plot_disease_progression()
+        self.healthcare_system.analyzer.plot_hospitalization_and_isolation()
+        self.healthcare_system.analyzer.plot_interactions()
+        self.healthcare_system.analyzer.plot_policy_timeline()
+        self.healthcare_system.analyzer.export_to_csv()
+        self.healthcare_system.analyzer.generate_pdf_report()
     # def simulate(self, days, interval="daily"):
     #     """
     #     Simulate interactions over multiple days.
@@ -151,16 +161,21 @@ class DailySimulation:
         :return: A summary of interactions for the day.
         """
         daily_interactions = {
-            "morning": self._simulate_morning(),
-            "daytime": self._simulate_daytime(),
-            "evening": self._simulate_evening(),
-            "night": self._simulate_night()
+        "morning": self._simulate_morning(),
+        "daytime": self._simulate_daytime(),
+        "evening": self._simulate_evening(),
+        "night": self._simulate_night()
         }
 
-        # Propagate disease based on interactions
-        self.disease_model.propagate(daily_interactions)
+        # 1️⃣ Excluir agentes hospitalizados o aislados
+        filtered_interactions = { #TODO : Ver si se puede mejorar esto de manera que no se tenga que sacar despues de hecho
+            period: [(a1, a2) for a1, a2 in interactions
+                    if not (a1.is_hospitalized or a2.is_hospitalized or a1.is_isolated or a2.is_isolated)]
+            for period, interactions in daily_interactions.items()
+        }
 
-        return daily_interactions
+        
+        return filtered_interactions
 
     def _simulate_morning(self):
         """

@@ -28,6 +28,7 @@ class DiseaseModel(ABC):
         """
         self.name = name
         self.transmission_rate = transmission_rate
+        print(f"El rate de trasnmision es " ,self.transmission_rate)
         self.incubation_period = incubation_period
         self.asymptomatic_probability = asymptomatic_probability
         self.base_mortality_rate = base_mortality_rate
@@ -62,8 +63,15 @@ class DiseaseModel(ABC):
         """
         for time_period, interactions in daily_interactions.items():
             for agent1, agent2 in interactions:  # Each interaction is a tuple (agent1, agent2)
-                if not agent1.is_isolated and not agent2.is_isolated and (agent1.infection_status["state"] == State.INFECTED or agent2.infection_status["state"] == State.INFECTED):
+                
+                if agent1.is_isolated or agent2.is_isolated or agent1.is_hospitalized or agent2.is_hospitalized:
+                    print("Estan llegando agentes isolados u hospitalizados a la propagacion")
+                # Aqui no deben llegar agentes isolados u hospitalizados porque los quito de las interaciones en simulate_day
+                if (agent1.infection_status["state"] == State.INFECTED or agent2.infection_status["state"] == State.INFECTED):
                     self._evaluate_transmission((agent1, agent2))
+
+        a = 6 # Debugging 
+        b = 9 # Debugging           
 
     def _evaluate_transmission(self, interaction):
         """
@@ -86,7 +94,8 @@ class DiseaseModel(ABC):
         """
         if target.infection_status["state"] is State.SUSCEPTIBLE and not target.immune:
             transmission_probability = self.calculate_transmission_probability(source, target)
-            if random.random() < transmission_probability:
+            r = random.random()
+            if r < transmission_probability:
                 target.transition(State.INFECTED, reason=f"Infected by {self.name}")
                 target.infection_status.update({
                     "disease": self.name,
@@ -124,24 +133,27 @@ class DiseaseModel(ABC):
 
         :param agent: The agent whose infection state is being progressed.
         """
+        if agent.infection_status["days_infected"] == 0:
+            agent.incubation_period = self.incubation_period()
+
         agent.infection_status["days_infected"] += 1
         days_infected = agent.infection_status["days_infected"]
 
         # 1️⃣ INCUBACIÓN: No síntomas ni transmisión hasta que termine
-        if days_infected <= self.incubation_period:
+        if days_infected <= agent.incubation_period:
             agent.infection_status["contagious"] = False
             return
 
         # 2️⃣ FIN DE INCUBACIÓN: Definir severidad y contagiosidad
-        if days_infected == self.incubation_period + 1:
+        if days_infected == agent.incubation_period + 1:
             agent.infection_status["contagious"] = True  # Ya puede contagiar
             if agent.infection_status["asymptomatic"]:
                 agent.infection_status.update({
                     "severity": "asymptomatic",
-                    "state": State.ASYMPTOMATIC
+                    "state": State.INFECTED
                 })
-                agent.transition(State.ASYMPTOMATIC, reason=f"{self.name} infection")
-            else:
+                agent.transition(State.INFECTED, reason=f"{self.name} infection")
+            else: # Si es asintomatico no se le determina la severidad
                 severity = self.determine_severity(agent)
                 agent.infection_status.update({
                     "severity": severity,
@@ -154,9 +166,9 @@ class DiseaseModel(ABC):
         severity = agent.infection_status.get("severity", "mild")
         recovery_days = self.severity_durations.get(severity, 10)  # Tiempo de recuperación
 
-        if days_infected >= self.incubation_period + recovery_days:
+        if days_infected >= agent.incubation_period + recovery_days:
             # 3.1️⃣ CASOS CRÍTICOS: Posibilidad de muerte
-            if severity == "critical" and random.random() < agent.mortality_rate:
+            if severity == "critical" and random.random() < agent.update_mortality_rate(self.base_mortality_rate):
                 agent.infection_status.update({
                     "state": State.DECEASED,
                     "contagious": False,

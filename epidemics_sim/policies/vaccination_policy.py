@@ -60,22 +60,3 @@ class VaccinationPolicy(Policy):
         agent.vaccinated = True
         agent.vaccine_effectiveness = self.effectiveness
 
-# Example usage
-if __name__ == "__main__":
-    from epidemics_sim.agents.human_agent import HumanAgent
-
-    # Example agents
-    agents = [
-        HumanAgent(agent_id=i, age=random.randint(0, 100), gender="male", occupation="worker", household_id=i % 10)
-        for i in range(100)
-    ]
-
-    # Vaccination policy targeting elderly and essential workers
-    vaccination_policy = VaccinationPolicy(vaccination_rate=0.1, effectiveness=0.8, target_groups=["elderly", "essential_workers"])
-
-    # Apply the policy
-    vaccination_policy.enforce(agents, clusters={})
-
-    # Check results
-    vaccinated_agents = [agent for agent in agents if agent.vaccinated]
-    print(f"Total vaccinated agents: {len(vaccinated_agents)}")

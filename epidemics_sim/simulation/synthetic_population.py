@@ -118,7 +118,7 @@ class SyntheticPopulationGenerator:
 
         return comorbidities
 
-    def _generate_occupation(self, age):
+    def _generate_occupation(self, age): # TODO Arreglar esto
         if age < 18:
             return "student"
         elif age < 65:

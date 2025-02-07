@@ -2,17 +2,17 @@ import random
 import networkx as nx
 
 class Subcluster:
-    def __init__(self, agents, active_periods, topology="scale_free"):
+    def __init__(self, agents, topology="scale_free", interaction_probability=0.7):
         """
         Initialize a subcluster.
 
         :param agents: List of agents assigned to the subcluster.
-        :param active_periods: List of periods during which the subcluster is active (e.g., ["morning", "daytime"]).
         :param topology: Topology of the graph (e.g., "scale_free", "complete").
+        :param interaction_probability: Probability that an edge results in an actual interaction.
         """
         self.agents = agents
-        self.active_periods = active_periods
         self.topology = topology
+        self.interaction_probability = interaction_probability
 
     def generate_graph(self):
         """
@@ -21,69 +21,69 @@ class Subcluster:
         :return: A NetworkX graph representing the subcluster.
         """
         num_agents = len(self.agents)
-
+        
         if num_agents < 2:
-            # Return an empty graph for subclusters with fewer than 2 agents
             return nx.Graph()
 
         if self.topology == "scale_free":
-            # Adjust m dynamically to ensure it satisfies NetworkX requirements
-            m = min(2, num_agents - 1)
+            m = max(1, min(2, num_agents - 1))  # Ensure m is within valid range
             graph = nx.barabasi_albert_graph(num_agents, m)
         elif self.topology == "complete":
             graph = nx.complete_graph(num_agents)
         else:
             raise ValueError(f"Unknown topology: {self.topology}")
 
-        # Assign agents to graph nodes
         for i, agent in enumerate(self.agents):
             graph.nodes[i]["agent"] = agent
 
         return graph
 
-    def simulate_interactions(self, time_period):
+    def simulate_interactions(self):
         """
         Simulate interactions for the subcluster during a specific time period.
 
-        :param time_period: The time period (e.g., "morning", "daytime", "evening", "night").
         :return: List of interactions within the subcluster.
         """
-        if time_period not in self.active_periods:
-            return []
-
         graph = self.generate_graph()
         interactions = []
 
         for edge in graph.edges:
-            agent1 = graph.nodes[edge[0]]['agent']
-            agent2 = graph.nodes[edge[1]]['agent']
-            interactions.append((agent1, agent2))
+            if random.random() < self.interaction_probability:  # Introduce randomness in interactions
+                agent1 = graph.nodes[edge[0]]['agent']
+                agent2 = graph.nodes[edge[1]]['agent']
+                interactions.append((agent1, agent2))
 
         return interactions
 
 class ClusterWithSubclusters:
-    def __init__(self, subclusters, cluster_type):
+    def __init__(self, subclusters, cluster_type, active_periods):
         """
         Initialize a cluster with pre-defined subclusters.
 
         :param subclusters: List of Subcluster instances.
         :param cluster_type: Type of cluster (e.g., "home", "work", "school", "shopping").
+        :param active_periods: Time periods when the cluster is active.
         """
         self.subclusters = subclusters
         self.cluster_type = cluster_type
+        self.active_periods = active_periods
+        self.lockdown_is_active = False
+
+    def enforce_lockdown(self):
+        self.lockdown_is_active = True
+    
+    def remove_lockdown(self):
+        self.lockdown_is_active = False
 
     def simulate_interactions(self, time_period):
         """
         Simulate interactions for all subclusters within this cluster during a specific time period.
-
-        :param time_period: The time period (e.g., "morning", "daytime", "evening", "night").
-        :return: List of interactions within all subclusters.
         """
         interactions = []
-        for subcluster in self.subclusters:
-            interactions.extend(subcluster.simulate_interactions(time_period))
+        if not self.lockdown_is_active and time_period in self.active_periods:
+            for subcluster in self.subclusters:
+                interactions.extend(subcluster.simulate_interactions())
         return interactions
-
 class CityClusterGenerator:
     def __init__(self, municipal_data):
         """
@@ -117,7 +117,7 @@ class CityClusterGenerator:
         """
         return [agent for agent in agents if agent.municipio == municipio]
 
-    def generate_home_clusters(self, agents):
+    def generate_home_clusters(self, agents): #TODO: Mejorar esto el tema de los adultos
         """
         Generate home clusters, where each subcluster represents a household.
         Se agrupan los agentes por municipio y se extraen hogares de tamaño aleatorio
@@ -168,62 +168,20 @@ class CityClusterGenerator:
                         break
 
                 home_subclusters.append(
-                    Subcluster(household_agents, active_periods=["morning", "evening", "night"], topology="complete")
+                    Subcluster(household_agents, topology="complete")
                 )
 
                 # Verificar que la lista se esté reduciendo
-                if iteration > 10000:
-                    print(f"Advertencia: Demasiadas iteraciones en {municipio}. Posible bucle infinito.")
-                    break
+                # if iteration > 10000:
+                #     print(f"Advertencia: Demasiadas iteraciones en {municipio}. Posible bucle infinito.")
+                #     break
 
             print(f"Finalizado la generación de hogares para {municipio}: {len(home_subclusters)} hogares generados.")
 
-        return ClusterWithSubclusters(home_subclusters, cluster_type="home")
+        return ClusterWithSubclusters(home_subclusters, cluster_type="home", active_periods= ["morning", "night"])
 
-    # def generate_home_clusters(self, agents):
-    #     """
-    #     Generate home clusters, where each subcluster represents a household.
 
-    #     :param agents: List of agents to assign to home clusters.
-    #     :return: A ClusterWithSubclusters instance for home.
-    #     """
-    #     home_subclusters = []
-
-    #     for municipio, data in self.municipal_data.items():
-    #         municipio_agents = self._get_agents_by_municipio(agents, municipio)
-    #         household_sizes = list(data["hogares_por_tamano"].keys())
-    #         household_distribution = list(data["hogares_por_tamano"].values())
-
-    #         unassigned_agents = municipio_agents.copy()
-
-    #         while unassigned_agents:
-    #             size_key = random.choices(household_sizes, household_distribution)[0]
-    #             size_mapping = {
-    #                 "1_persona": 1,
-    #                 "2_personas": 2,
-    #                 "3_personas": 3,
-    #                 "4_personas": 4,
-    #                 "5_personas_o_mas": random.randint(5, 8)
-    #             }
-    #             size = size_mapping[size_key]
-    #             size = min(size, len(unassigned_agents))
-
-    #             household_agents = unassigned_agents[:size]
-    #             unassigned_agents = unassigned_agents[size:]
-
-    #             # Ensure at least one adult in the household
-    #             if not any(agent.age >= 18 for agent in household_agents):
-    #                 adults = [agent for agent in unassigned_agents if agent.age >= 18]
-    #                 if adults:
-    #                     adult = adults.pop(0)
-    #                     household_agents[-1] = adult
-    #                     unassigned_agents.remove(adult)
-
-    #             home_subclusters.append(Subcluster(household_agents, ["morning", "evening", "night"], topology="complete"))
-
-    #    return ClusterWithSubclusters(home_subclusters, "home")
-
-    def generate_work_clusters(self, agents):
+    def generate_work_clusters(self, agents): # TODO: Arreglar esto
         """
         Generate work clusters, where each subcluster represents a workplace.
 
@@ -248,11 +206,11 @@ class CityClusterGenerator:
                 workplace_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                work_subclusters.append(Subcluster(workplace_agents, ["daytime"], topology="scale_free"))
+                work_subclusters.append(Subcluster(workplace_agents, topology="scale_free"))
 
-        return ClusterWithSubclusters(work_subclusters, "work")
+        return ClusterWithSubclusters(work_subclusters, "work",["daytime"])
 
-    def generate_school_clusters(self, agents):
+    def generate_school_clusters(self, agents): # Ver de verdad cuantos hay
         """
         Generate school clusters, where each subcluster represents a school.
 
@@ -283,9 +241,9 @@ class CityClusterGenerator:
                 school_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                school_subclusters.append(Subcluster(school_agents, ["morning", "daytime"], topology="scale_free"))
+                school_subclusters.append(Subcluster(school_agents, topology="scale_free"))
 
-        return ClusterWithSubclusters(school_subclusters, "school")
+        return ClusterWithSubclusters(school_subclusters, "school",["daytime"])
 
     def generate_shopping_clusters(self, agents):
         """
@@ -319,6 +277,6 @@ class CityClusterGenerator:
                 shopping_center_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                shopping_subclusters.append(Subcluster(shopping_center_agents, ["evening"], topology="scale_free"))
+                shopping_subclusters.append(Subcluster(shopping_center_agents, topology="scale_free"))
 
-        return ClusterWithSubclusters(shopping_subclusters, "shopping")
+        return ClusterWithSubclusters(shopping_subclusters, "shopping",["evening"])
