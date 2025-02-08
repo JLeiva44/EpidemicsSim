@@ -25,7 +25,7 @@ class SimulationController:
         self.policies = self._configurate_policies(policies) #[policy() for policy in policies]
         self.simulation_days = simulation_days
         self.agents = self._generate_agents()
-        self.cluster_generator = CityClusterGenerator(demographics["municipios"])
+        self.cluster_generator = CityClusterGenerator(demographics)
         #self.analyzer = SimulationAnalyzer()
 
     def _configurate_policies(self, policies):
@@ -50,8 +50,11 @@ class SimulationController:
             demographics=self.demographics
         )
         agents = generator.generate_population()
+        print("se genero la poblacion")
         generator.save_population(agents,'population.pkl')
+        print("Se salvo")
         agents = generator.load_population('population.pkl')
+        print("Se cargo")
         return agents
 
     def run(self):

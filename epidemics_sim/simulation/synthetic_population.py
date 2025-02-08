@@ -2,9 +2,8 @@ import pickle  # Para serialización y deserialización
 from epidemics_sim.agents.human_agent import HumanAgent
 import random
 
-# Para "5_personas_o_mas", distribuir entre 5 y un máximo configurable
 def get_large_household_size():
-    distribution = {5: 0.5, 6: 0.3, 7: 0.15, 8: 0.05}  # Probabilidades para tamaños mayores
+    distribution = {5: 0.5, 6: 0.3, 7: 0.15, 8: 0.05}
     return random.choices(list(distribution.keys()), list(distribution.values()))[0]
 
 size_mapping = {
@@ -18,125 +17,82 @@ size_mapping = {
 class SyntheticPopulationGenerator:
     def __init__(self, demographics):
         """
-        Class to generate a synthetic population.
-
-        :param demographics: Dictionary with demographic data (e.g., age distribution, gender ratio).
+        Clase para generar una población sintética basada en los datos demográficos.
+        
+        :param demographics: Diccionario con datos demográficos.
         """
         self.demographics = demographics
+        self.comorbidities_rates = demographics.get("Comorbilidades", {})  # Tasa de comorbilidades por mil
 
     def generate_population(self):
         """
-        Generate a population of agents with demographic attributes.
-
-        :return: A list of agents.
+        Genera una población de agentes con atributos demográficos.
         """
         agents = self._generate_agents()
-        #self._assign_households(agents)
         return agents
 
     def save_population(self, agents, filepath):
-        """
-        Serialize and save the population to a file.
-
-        :param agents: List of agents to save.
-        :param filepath: Path to the file where the population will be saved.
-        """
         with open(filepath, 'wb') as file:
             pickle.dump(agents, file)
-        print(f"Population saved to {filepath}.")
+        print(f"Población guardada en {filepath}.")
 
     def load_population(self, filepath):
-        """
-        Load a population from a serialized file.
-
-        :param filepath: Path to the file where the population is saved.
-        :return: A list of agents.
-        """
         with open(filepath, 'rb') as file:
             agents = pickle.load(file)
-        print(f"Population loaded from {filepath}.")
+        print(f"Población cargada desde {filepath}.")
         return agents
 
     def _generate_agents(self):
         agents = []
         for municipio, data in self.demographics["municipios"].items():
-            num_agents = data["poblacion_total"]
-            for agent_id in range(num_agents):
-                age = self._generate_age(data["distribucion_edad"])
-                gender = self._generate_gender()
-                occupation = self._generate_occupation(age)
-                comorbidities = self._generate_comorbidities(age, gender, municipio)
+            # if "population" not in data:
+            #     continue  # Ignorar claves generales como "Comorbilidades"
 
-                agent = HumanAgent(
-                    agent_id, age, gender, occupation, None, municipio, None, comorbidities
-                )
-                agents.append(agent)
+            num_male = int(data["population"].get("VARONES", 0))
+            num_female = int(data["population"].get("HEMBRAS", 0))
+
+            agents.extend(self._create_agents(num_male, "male", municipio, data))
+            agents.extend(self._create_agents(num_female, "female", municipio, data))
+        
         return agents
 
-    def _assign_households(self, agents):
-        for municipio, data in self.demographics["municipios"].items():
-            municipio_agents = [agent for agent in agents if agent.municipio == municipio]
-            adult = [agent for agent in municipio_agents if agent.age >= 18]
-            households = []
-            unassigned_agents = municipio_agents.copy()
+    def _create_agents(self, num_agents, gender, municipio, data):
+        #agents = []
+        agents = {}
+        for agent_id in range(num_agents):
+            age = self._generate_age(data["population"]["Habitantes_por_edad"])
+            occupation = self._generate_occupation(age)
+            comorbidities = self._generate_comorbidities()
+            
+            agent = HumanAgent(
+                agent_id, age, gender, occupation, None, municipio, None, comorbidities
+            )
+            agents[agent_id] = agent
+        return agents
 
-            household_sizes = list(data["hogares_por_tamano"].keys())
-            size_probabilities = list(data["hogares_por_tamano"].values())
+    def _generate_age(self, age_distribution):
+        ranges = list(age_distribution.keys())
+        probabilities = [float(age_distribution[r]) for r in ranges]
+        chosen_range = random.choices(ranges, probabilities)[0]
 
-            previous_length = len(unassigned_agents)
-            while unassigned_agents:
-                size_key = random.choices(household_sizes, size_probabilities)[0]
-                size = size_mapping[size_key] if isinstance(size_mapping[size_key], int) else size_mapping[size_key]()
-                size = min(size, len(unassigned_agents))
+        if chosen_range == "0-15":
+            return random.randint(0, 15)
+        elif chosen_range == "16-59":
+            return random.randint(16, 59)
+        elif chosen_range == "60 y +":
+            return random.randint(60, 100)
 
-                household = unassigned_agents[:size]
-                unassigned_agents = unassigned_agents[size:]
-
-                if not any(agent.age >= 18 for agent in household):
-                    adults = [agent for agent in unassigned_agents if agent.age >= 18]
-                    if adults:
-                        adult = adults.pop(0)
-                        household[-1] = adult
-                        unassigned_agents.remove(adult)
-
-                household_id = household[0].agent_id
-                for agent in household:
-                    agent.household_id = household_id
-
-                households.append(household)
-
-                if len(unassigned_agents) == previous_length:
-                    break
-                previous_length = len(unassigned_agents)
-
-    def _generate_comorbidities(self, age, gender, municipio):
-        municipio_data = self.demographics["municipios"][municipio]
-        comorbidities = {}
-
-        for comorbidity, rate in municipio_data["comorbilidades"].items():
-            comorbidities[comorbidity] = random.random() < (rate / 100)
-
-        return comorbidities
-
-    def _generate_occupation(self, age): # TODO Arreglar esto
-        if age < 18:
+    def _generate_occupation(self, age):
+        if age < 16:
             return "student"
-        elif age < 65:
+        elif age < 60:
             return "worker"
         else:
             return "retired"
 
-    def _generate_age(self, age_distribution):
-        ranges = list(age_distribution.keys())
-        probabilities = list(age_distribution.values())
-
-        chosen_range = random.choices(ranges, probabilities)[0]
-        if chosen_range == "0-17":
-            return random.randint(0, 17)
-        elif chosen_range == "18-64":
-            return random.randint(18, 64)
-        elif chosen_range == "65+":
-            return random.randint(65, 100)
-
-    def _generate_gender(self):
-        return random.choice(["male", "female"])
+    def _generate_comorbidities(self):
+        comorbidities = {}
+        for disease, rate_per_thousand in self.comorbidities_rates.items():
+            probability = float(rate_per_thousand) / 1000  # Convertimos tasa por mil a probabilidad 0-1
+            comorbidities[disease] = random.random() < probability
+        return comorbidities
