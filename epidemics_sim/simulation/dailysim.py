@@ -25,7 +25,7 @@ class DailySimulation:
         self.policies = policies
         self.healthcare_system = healthcare_system
         #self.analyzer = analyzer
-        self.clusters = self.cluster_generator.generate_clusters(self.agents)
+        self.clusters = self.cluster_generator.generate_clusters(self.agents.values())
 
         # Initialize infections
         self._initialize_infections(initial_infected)
@@ -36,8 +36,9 @@ class DailySimulation:
 
         :param initial_infected: Number of agents to infect initially.
         """
-        infected_agents = random.sample(self.agents, initial_infected)
+        infected_agents = random.sample(list(self.agents.values()), initial_infected)
         self.disease_model.initialize_infections(infected_agents)
+
 
     def simulate(self, days):
         """
@@ -67,15 +68,18 @@ class DailySimulation:
             self.disease_model.propagate(daily_summary)
 
             # 2️⃣ Progresar la infección en los agentes
-            for agent in self.agents:
+            for agent in self.agents.values():
                 if agent.infection_status['state'] == State.INFECTED:
                     self.disease_model.progress_infection(agent)
 
             # 3️⃣ Ejecutar las operaciones del sistema de salud
-            self.healthcare_system.daily_operations(self.agents, self.clusters,sum([len(interactions) for interactions in daily_summary.values()]), day)
+            self.healthcare_system.daily_operations(self.agents.values(), self.clusters,sum([len(interactions) for interactions in daily_summary.values()]), day)
 
             # 4️⃣ Eliminar agentes muertos después de registrar estadísticas
-            self.agents = [agent for agent in self.agents if agent.infection_status['state'] != State.DECEASED]
+            for cluster in self.clusters.values():
+                cluster.remove_deceased_agents(self.agents)
+            self.agents = {agent_id: agent for agent_id, agent in self.agents.items() if agent.infection_status["state"] != State.DECEASED}
+
 
             week_counter +=1
 

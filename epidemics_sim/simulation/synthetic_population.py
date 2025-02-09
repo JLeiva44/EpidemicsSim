@@ -23,13 +23,13 @@ class SyntheticPopulationGenerator:
         """
         self.demographics = demographics
         self.comorbidities_rates = demographics.get("Comorbilidades", {})  # Tasa de comorbilidades por mil
-
+        self.population = {}
     def generate_population(self):
         """
         Genera una población de agentes con atributos demográficos.
         """
-        agents = self._generate_agents()
-        return agents
+        self._generate_agents()
+        return self.population
 
     def save_population(self, agents, filepath):
         with open(filepath, 'wb') as file:
@@ -43,7 +43,7 @@ class SyntheticPopulationGenerator:
         return agents
 
     def _generate_agents(self):
-        agents = []
+        #agents = {}
         for municipio, data in self.demographics["municipios"].items():
             # if "population" not in data:
             #     continue  # Ignorar claves generales como "Comorbilidades"
@@ -51,14 +51,14 @@ class SyntheticPopulationGenerator:
             num_male = int(data["population"].get("VARONES", 0))
             num_female = int(data["population"].get("HEMBRAS", 0))
 
-            agents.extend(self._create_agents(num_male, "male", municipio, data))
-            agents.extend(self._create_agents(num_female, "female", municipio, data))
+            self._create_agents(num_male, "male", municipio, data)
+            self._create_agents(num_female, "female", municipio, data)
         
-        return agents
+        #return agents
 
     def _create_agents(self, num_agents, gender, municipio, data):
         #agents = []
-        agents = {}
+        #agents = {}
         for agent_id in range(num_agents):
             age = self._generate_age(data["population"]["Habitantes_por_edad"])
             occupation = self._generate_occupation(age)
@@ -67,8 +67,8 @@ class SyntheticPopulationGenerator:
             agent = HumanAgent(
                 agent_id, age, gender, occupation, None, municipio, None, comorbidities
             )
-            agents[agent_id] = agent
-        return agents
+            self.population[agent_id] = agent
+        #return agents
 
     def _generate_age(self, age_distribution):
         ranges = list(age_distribution.keys())

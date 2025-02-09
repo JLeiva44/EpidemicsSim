@@ -64,7 +64,7 @@ class SimulationController:
         :return: Results of the simulation.
         """
         # Generate transport interactions
-        transport_interaction = TransportInteraction(self.agents, self.config["transport"])
+        #transport_interaction = TransportInteraction(self.agents, self.config["transport"])
 
         # Initialize the disease model
         disease_model = self.disease_model_class(**self.config["disease"])
@@ -76,7 +76,7 @@ class SimulationController:
         daily_simulation = DailySimulation(
             agents=self.agents,
             cluster_generator=self.cluster_generator,
-            transport=transport_interaction,
+            transport=None,
             config=self.config,
             disease_model=disease_model,
             policies=self.policies,
@@ -96,49 +96,3 @@ class SimulationController:
 
         return simulation_results
 
-# # Example configuration
-# example_demographics = {
-#     "total_population": 200,
-#     "age_distribution": {"0-17": 0.25, "18-64": 0.6, "65+": 0.15},
-#     "gender_ratio": {"male": 0.5, "female": 0.5},
-#     "comorbidities": {
-#         "diabetes": 0.1,
-#         "hypertension": 0.15,
-#         "obesity": 0.2,
-#         "smoking": 0.25,
-#         "copd": 0.05,
-#         "chronic_heart_disease": 0.07,
-#         "chronic_kidney_disease": 0.03
-#     }
-# }
-
-# example_config = {
-#     "home": {"duration_mean": 480, "duration_std": 120},
-#     "work": {"duration_mean": 480, "duration_std": 120, "min_links": 2},
-#     "school": {"duration_mean": 300, "duration_std": 60},
-#     "shopping": {"duration_mean": 37, "duration_std": 10, "max_agents": 50},
-#     "transport": {"interval": 5, "duration_mean": 15, "duration_std": 5},
-#     "household_sizes": [1, 2, 3, 4, 5, 6],
-#     "household_distribution": [0.1, 0.2, 0.3, 0.2, 0.15, 0.05],
-#     "work_sizes": [5, 10, 20, 50],
-#     "work_distribution": [0.4, 0.3, 0.2, 0.1],
-#     "school_sizes": [20, 30, 40],
-#     "school_distribution": [0.5, 0.3, 0.2],
-#     "shopping_centers": 5,
-#     "disease": {"transmission_rate": 0.03, "recovery_rate": 0.01, "mortality_rate": 0.001}
-# }
-
-# if __name__ == "__main__":
-#     from disease import CovidModel
-#     from policies import LockdownPolicy, SocialDistancingPolicy
-
-#     simulation_controller = SimulationController(
-#         demographics=example_demographics,
-#         config=example_config,
-#         disease_model_class=CovidModel,
-#         policies=[LockdownPolicy, SocialDistancingPolicy],
-#         simulation_days=10
-#     )
-
-#     results = simulation_controller.run()
-#     print("Simulation Results:", results)

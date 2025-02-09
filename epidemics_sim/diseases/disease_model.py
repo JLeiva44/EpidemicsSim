@@ -1,7 +1,7 @@
 import random
 from abc import ABC, abstractmethod
 from epidemics_sim.agents.base_agent import State
-
+import math
 class DiseaseModel(ABC):
     def __init__(
         self,
@@ -127,6 +127,8 @@ class DiseaseModel(ABC):
 
         return probability
 
+
+
     def progress_infection(self, agent):
         """
         Progress the infection state for the given agent.
@@ -146,14 +148,14 @@ class DiseaseModel(ABC):
 
         # 2️⃣ FIN DE INCUBACIÓN: Definir severidad y contagiosidad
         if days_infected == agent.incubation_period + 1:
-            agent.infection_status["contagious"] = True  # Ya puede contagiar
+            agent.infection_status["contagious"] = True  # Ahora puede contagiar
             if agent.infection_status["asymptomatic"]:
                 agent.infection_status.update({
                     "severity": "asymptomatic",
                     "state": State.INFECTED
                 })
                 agent.transition(State.INFECTED, reason=f"{self.name} infection")
-            else: # Si es asintomatico no se le determina la severidad
+            else:
                 severity = self.determine_severity(agent)
                 agent.infection_status.update({
                     "severity": severity,
@@ -162,13 +164,41 @@ class DiseaseModel(ABC):
                 agent.transition(State.INFECTED, reason=f"{self.name} infection ({severity})")
             return
 
-        # 3️⃣ PROGRESIÓN: Evaluar recuperación o muerte
+        # 3️⃣ PROGRESIÓN: Evaluar cambio de gravedad
         severity = agent.infection_status.get("severity", "mild")
-        recovery_days = self.severity_durations.get(severity, 10)  # Tiempo de recuperación
+        recovery_days = self.severity_durations.get(severity, 10)  # Tiempo base de recuperación
 
+        # 💡 Bonus de recuperación si está hospitalizado
+        recovery_bonus = 1.3 if agent.is_hospitalized else 1.0  
+
+        # Probabilidad base de progresión según severidad
+        progression_rates = {
+            "mild": 0.15,        # 15% de pasar a moderado
+            "moderate": 0.25,    # 25% de pasar a severo
+            "severe": 0.40,      # 40% de pasar a crítico
+        }
+
+        # Obtener la mortalidad ajustada del agente
+        mortality_risk = self.calculate_critical_mortality_rate(agent.mortality_rate)
+
+        # 📌 **Nueva Fórmula**: Probabilidad combinada usando logaritmo
+        progression_probability = progression_rates.get(severity, 0) * math.log(1 + agent.mortality_rate * 10)
+
+        # Evaluar si el paciente empeora
+        if severity in progression_rates and random.random() < progression_probability:
+            new_severity = {
+                "mild": "moderate",
+                "moderate": "severe",
+                "severe": "critical"
+            }[severity] # TODO : Esto debe ser independiente para cada enfermedad y con datos esepcificos
+            agent.infection_status.update({"severity": new_severity})
+            agent.transition(State.INFECTED, reason=f"{self.name} worsened to {new_severity}")
+            return
+
+        # 4️⃣ Evaluar recuperación o muerte
         if days_infected >= agent.incubation_period + recovery_days:
-            # 3.1️⃣ CASOS CRÍTICOS: Posibilidad de muerte
-            if severity == "critical" and random.random() < agent.update_mortality_rate(self.base_mortality_rate):
+            # 🚨 CASOS CRÍTICOS: Posibilidad de muerte
+            if severity == "critical" and random.random() < (mortality_risk / recovery_bonus):
                 agent.infection_status.update({
                     "state": State.DECEASED,
                     "contagious": False,
@@ -177,8 +207,8 @@ class DiseaseModel(ABC):
                 agent.transition(State.DECEASED, reason=f"{self.name} critical condition")
                 return  # 🚨 Agente murió, no sigue en la simulación
 
-            # 3.2️⃣ RECUPERACIÓN: Puede ser inmune o volver a ser susceptible
-            if random.random() < self.recovery_rates.get(severity, 1.0):
+            # ✅ RECUPERACIÓN: Puede ser inmune o volver a ser susceptible
+            if random.random() < (self.recovery_rates.get(severity, 1.0) * recovery_bonus):
                 agent.infection_status.update({
                     "state": State.RECOVERED,
                     "contagious": False,
@@ -194,7 +224,7 @@ class DiseaseModel(ABC):
                     agent.infection_status["immunity_days"] = 0
                 return
 
-        # 4️⃣ REINFECCIÓN: Si la inmunidad es temporal, vuelve a ser susceptible
+        # 5️⃣ REINFECCIÓN: Si la inmunidad es temporal, vuelve a ser susceptible
         if agent.infection_status["state"] == State.RECOVERED and "immunity_days" in agent.infection_status:
             agent.infection_status["immunity_days"] -= 1
             if agent.infection_status["immunity_days"] <= 0:
@@ -209,29 +239,39 @@ class DiseaseModel(ABC):
                 })
                 agent.transition(State.SUSCEPTIBLE, reason=f"{self.name} immunity waned")
                 agent.immune = False  
+
     # def progress_infection(self, agent):
     #     """
     #     Progress the infection state for the given agent.
 
     #     :param agent: The agent whose infection state is being progressed.
     #     """
+    #     if agent.infection_status["days_infected"] == 0:
+    #         agent.incubation_period = self.incubation_period()
+
     #     agent.infection_status["days_infected"] += 1
     #     days_infected = agent.infection_status["days_infected"]
 
     #     # 1️⃣ INCUBACIÓN: No síntomas ni transmisión hasta que termine
-    #     if days_infected <= self.incubation_period:
+    #     if days_infected <= agent.incubation_period:
     #         agent.infection_status["contagious"] = False
     #         return
 
     #     # 2️⃣ FIN DE INCUBACIÓN: Definir severidad y contagiosidad
-    #     if days_infected == self.incubation_period + 1:
+    #     if days_infected == agent.incubation_period + 1:
     #         agent.infection_status["contagious"] = True  # Ya puede contagiar
     #         if agent.infection_status["asymptomatic"]:
-    #             agent.infection_status["severity"] = "asymptomatic"
-    #             agent.transition(State.ASYMPTOMATIC, reason=f"{self.name} infection")
-    #         else:
+    #             agent.infection_status.update({
+    #                 "severity": "asymptomatic",
+    #                 "state": State.INFECTED
+    #             })
+    #             agent.transition(State.INFECTED, reason=f"{self.name} infection")
+    #         else: # Si es asintomatico no se le determina la severidad
     #             severity = self.determine_severity(agent)
-    #             agent.infection_status["severity"] = severity
+    #             agent.infection_status.update({
+    #                 "severity": severity,
+    #                 "state": State.INFECTED
+    #             })
     #             agent.transition(State.INFECTED, reason=f"{self.name} infection ({severity})")
     #         return
 
@@ -239,14 +279,25 @@ class DiseaseModel(ABC):
     #     severity = agent.infection_status.get("severity", "mild")
     #     recovery_days = self.severity_durations.get(severity, 10)  # Tiempo de recuperación
 
-    #     if days_infected >= self.incubation_period + recovery_days:
+    #     if days_infected >= agent.incubation_period + recovery_days:
     #         # 3.1️⃣ CASOS CRÍTICOS: Posibilidad de muerte
-    #         if severity == "critical" and random.random() < agent.mortality_rate:
+    #         if severity == "critical" and random.random() < agent.update_mortality_rate(self.base_mortality_rate):
+    #             agent.infection_status.update({
+    #                 "state": State.DECEASED,
+    #                 "contagious": False,
+    #                 "severity": "critical"
+    #             })
     #             agent.transition(State.DECEASED, reason=f"{self.name} critical condition")
     #             return  # 🚨 Agente murió, no sigue en la simulación
 
     #         # 3.2️⃣ RECUPERACIÓN: Puede ser inmune o volver a ser susceptible
     #         if random.random() < self.recovery_rates.get(severity, 1.0):
+    #             agent.infection_status.update({
+    #                 "state": State.RECOVERED,
+    #                 "contagious": False,
+    #                 "severity": None,
+    #                 "days_infected": 0,
+    #             })
     #             agent.transition(State.RECOVERED, reason=f"{self.name} recovery")
 
     #             # 3.3️⃣ ¿La inmunidad es temporal?
@@ -260,17 +311,35 @@ class DiseaseModel(ABC):
     #     if agent.infection_status["state"] == State.RECOVERED and "immunity_days" in agent.infection_status:
     #         agent.infection_status["immunity_days"] -= 1
     #         if agent.infection_status["immunity_days"] <= 0:
-    #             agent.transition(State.SUSCEPTIBLE, reason=f"{self.name} immunity waned")
-    #             agent.immune = False  
     #             agent.infection_status.update({
-    #                 "disease": "",
     #                 "state": State.SUSCEPTIBLE,
+    #                 "disease": "",
     #                 "severity": None,
     #                 "contagious": False,
     #                 "days_infected": 0,
     #                 "asymptomatic": None,
     #                 "immunity_days": 0
     #             })
+    #             agent.transition(State.SUSCEPTIBLE, reason=f"{self.name} immunity waned")
+    #             agent.immune = False  
+  
+    def calculate_critical_mortality_rate(self, agent_mortality_rate):
+        """
+        Update the agent's mortality rate based on base mortality and disease mortality rates.
+
+        :param disease_mortality_rate: Disease-specific mortality rate (0 to 1).
+        :param vaccine_efficacy: Reduction in mortality due to vaccination (0 to 1). Default is 0 (no vaccination).
+        """
+        # Combine using the log-based formula
+        combined_rate = 1 - (1 - agent_mortality_rate) * (1 - self.base_mortality_rate)
+
+        # # Apply vaccine efficacy if vaccinated
+        # if self.vaccinated:
+        #     combined_rate *= (1 - vaccine_efficacy)
+
+        #self.mortality_rate = combined_rate
+        return combined_rate
+
                 
     @abstractmethod
     def determine_severity(self, agent):
