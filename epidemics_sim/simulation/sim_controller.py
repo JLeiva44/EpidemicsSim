@@ -69,8 +69,8 @@ class SimulationController:
         # Initialize the disease model
         disease_model = self.disease_model_class(**self.config["disease"])
 
-        # Initialize the HealthCare System
-        healthcare_system = HealthcareSystem(5000, 10000, self.policies)
+        # Initialize the HealthCare System TODO: Meter las capacidades en el json
+        healthcare_system = HealthcareSystem(5000, 10000,self.policies, self.demographics["municipios"]) # Aqui tengo que anadir las politicas
 
         # Initialize daily simulation
         daily_simulation = DailySimulation(

@@ -24,6 +24,7 @@ class SyntheticPopulationGenerator:
         self.demographics = demographics
         self.comorbidities_rates = demographics.get("Comorbilidades", {})  # Tasa de comorbilidades por mil
         self.population = {}
+        self.agent_counter = 0 # Contador de agentes
     def generate_population(self):
         """
         Genera una población de agentes con atributos demográficos.
@@ -59,10 +60,14 @@ class SyntheticPopulationGenerator:
     def _create_agents(self, num_agents, gender, municipio, data):
         #agents = []
         #agents = {}
-        for agent_id in range(num_agents):
+        for _ in range(num_agents):
             age = self._generate_age(data["population"]["Habitantes_por_edad"])
             occupation = self._generate_occupation(age)
             comorbidities = self._generate_comorbidities()
+            
+            # Generar un ID único para cada agente
+            agent_id = self.agent_counter
+            self.agent_counter += 1
             
             agent = HumanAgent(
                 agent_id, age, gender, occupation, None, municipio, None, comorbidities

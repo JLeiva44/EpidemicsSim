@@ -1,6 +1,7 @@
 import random
 from epidemics_sim.simulation.clusters import CityClusterGenerator
 from epidemics_sim.agents.base_agent import State
+from multiprocessing import Pool
 
 class DailySimulation:
     def __init__(self, agents, cluster_generator, transport, config, disease_model, policies, healthcare_system, initial_infected=5):
@@ -84,7 +85,7 @@ class DailySimulation:
             week_counter +=1
 
         # 5️⃣ Generar reporte y gráficos
-        self.healthcare_system.analyzer.generate_all_visualizations()
+        self.healthcare_system.analyzer.generate_full_report()
 
 
     def simulate_day(self):
@@ -93,6 +94,20 @@ class DailySimulation:
 
         :return: A summary of interactions for the day.
         """
+        # TODO : Posible mejora (y pasar active_agents como parametro a los metodos)
+        # active_agents = [
+        # agent for agent in self.agents.values()
+        # if not (agent.is_hospitalized or agent.is_isolated)
+        # ]
+
+        # with Pool() as pool:
+        #     results = pool.starmap(self._simulate_period, [
+        #         ("morning",),
+        #         ("daytime",),
+        #         ("evening",),
+        #         ("night",)
+        #     ])
+        # daily_interactions = dict(zip(["morning", "daytime", "evening", "night"], results))
         daily_interactions = {
         "morning": self._simulate_morning(),
         "daytime": self._simulate_daytime(),
@@ -111,6 +126,19 @@ class DailySimulation:
         
         return filtered_interactions
 
+    def _simulate_period(self, period, agents = None):
+        """
+        Simulate interactions for a specific period.
+        """
+        if period == "morning":
+            return self._simulate_morning()
+        elif period == "daytime":
+            return self._simulate_daytime()
+        elif period == "evening":
+            return self._simulate_evening()
+        elif period == "night":
+            return self._simulate_night()
+        
     def _simulate_morning(self):
         """
         Simulate interactions in the morning: Home and transport.

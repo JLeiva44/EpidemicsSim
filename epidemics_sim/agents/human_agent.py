@@ -4,7 +4,7 @@ import random
 class HumanAgent(BaseAgent):
     def __init__(
         self, agent_id, age, gender, occupation, household_id, municipio, disease_model,
-    comorbidities=[], attributes={}, consultorio=None, policlinico=None
+    comorbidities=[]
     ):
         """
         Represents a human agent with attributes relevant for epidemic simulations.
@@ -35,8 +35,6 @@ class HumanAgent(BaseAgent):
         self.immune = False
         self.is_isolated = False
         self.is_hospitalized = False
-        self.consultorio = consultorio
-        self.policlinico = policlinico
         self.asymtomathic = None
         self.mortality_rate = self._calculate_base_mortality_rate()
         self.disease_model = disease_model
@@ -77,25 +75,7 @@ class HumanAgent(BaseAgent):
         else:
             return 0.05
 
-    def update_mortality_rate(self, disease_mortality_rate, vaccine_efficacy=0.0):
-        """
-        Update the agent's mortality rate based on base mortality and disease mortality rates.
-
-        :param disease_mortality_rate: Disease-specific mortality rate (0 to 1).
-        :param vaccine_efficacy: Reduction in mortality due to vaccination (0 to 1). Default is 0 (no vaccination).
-        """
-        base_rate = self._calculate_base_mortality_rate()
-
-        # Combine using the log-based formula
-        combined_rate = 1 - (1 - base_rate) * (1 - disease_mortality_rate)
-
-        # Apply vaccine efficacy if vaccinated
-        if self.vaccinated:
-            combined_rate *= (1 - vaccine_efficacy)
-
-        #self.mortality_rate = combined_rate
-        return combined_rate
-
+    
 
     def reset_agent(self):
         """

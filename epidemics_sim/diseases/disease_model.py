@@ -106,6 +106,7 @@ class DiseaseModel(ABC):
                     "asymptomatic": random.random() < self.asymptomatic_probability,
                     "immunity_days": self.immunity_duration
                 })
+                print(target.municipio)
 
     def calculate_transmission_probability(self, source, target):
         """

@@ -42,8 +42,8 @@ class Subcluster:
             if random.random() < self.interaction_probability:
                 agent1 = graph.nodes[edge[0]]['agent']
                 agent2 = graph.nodes[edge[1]]['agent']
-                # if agent1.is_hospitalized or agent1.is_isolated or agent2.is_hospitalized or agent2.is_isolated:
-                #     continue  # Skip agents who shouldn't interact
+                if agent1.is_hospitalized or agent1.is_isolated or agent2.is_hospitalized or agent2.is_isolated:
+                    continue  # Skip agents who shouldn't interact
                 interactions.append((agent1, agent2))
         return interactions
 
