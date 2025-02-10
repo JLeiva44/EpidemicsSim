@@ -94,8 +94,7 @@ class DiseaseModel(ABC):
         """
         if target.infection_status["state"] is State.SUSCEPTIBLE and not target.immune:
             transmission_probability = self.calculate_transmission_probability(source, target)
-            r = random.random()
-            if r < transmission_probability:
+            if random.random() < transmission_probability:
                 target.transition(State.INFECTED, reason=f"Infected by {self.name}")
                 target.infection_status.update({
                     "disease": self.name,
@@ -106,7 +105,7 @@ class DiseaseModel(ABC):
                     "asymptomatic": random.random() < self.asymptomatic_probability,
                     "immunity_days": self.immunity_duration
                 })
-                print(target.municipio)
+                #print(target.municipio)
 
     def calculate_transmission_probability(self, source, target):
         """

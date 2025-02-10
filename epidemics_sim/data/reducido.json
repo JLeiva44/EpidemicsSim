@@ -1,0 +1,153 @@
+{
+    "municipios": {
+        "PLAYA": {
+            "population": {
+                "total_population": 18056,
+                "VARONES": 8275,
+                "HEMBRAS": 9782,
+                "Habitantes_por_edad": {
+                    "0-15": 2739,
+                    "16-59": 11297,
+                    "60 y +": 4021
+                }
+            },
+            "Escuelas": {
+                "Total": 101,
+                "Circulos infantiles": 33,
+                "Primaria": 39,
+                "Media": 24,
+                "Secundaria basica": 16,
+                "Preuniversitario": 3,
+                "Tecnica y profesional": 5
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.89
+        },
+        "REGLA": {
+            "population": {
+                "total_population": 4289,
+                "VARONES": 2067,
+                "HEMBRAS": 2222,
+                "Habitantes_por_edad": {
+                    "0-15": 742,
+                    "16-59": 2882,
+                    "60 y +": 666
+                }
+            },
+            "Escuelas": {
+                "Total": 28,
+                "Circulos infantiles": 9,
+                "Primaria": 9,
+                "Media": 7,
+                "Secundaria basica": 4,
+                "Preuniversitario": 1,
+                "Tecnica y profesional": 2
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.97
+        },
+        "LA HABANA DEL ESTE": {
+            "population": {
+                "total_population": 17389,
+                "VARONES": 8619,
+                "HEMBRAS": 8770,
+                "Habitantes_por_edad": {
+                    "0-15": 2819,
+                    "16-59": 11614,
+                    "60 y +": 2955
+                }
+            },
+            "Escuelas": {
+                "Total": 85,
+                "Circulos infantiles": 31,
+                "Primaria": 25,
+                "Media": 21,
+                "Secundaria basica": 14,
+                "Preuniversitario": 3,
+                "Tecnica y profesional": 4
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 3.04
+        },
+        "GUANABACOA": {
+            "population": {
+                "total_population": 11296,
+                "VARONES": 5550,
+                "HEMBRAS": 5746,
+                "Habitantes_por_edad": {
+                    "0-15": 2097,
+                    "16-59": 7458,
+                    "60 y +": 1742
+                }
+            },
+            "Escuelas": {
+                "Total": 72,
+                "Circulos infantiles": 17,
+                "Primaria": 33,
+                "Media": 14,
+                "Secundaria basica": 10,
+                "Preuniversitario": 2,
+                "Tecnica y profesional": 2
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.99
+        },
+        "SAN MIGUEL DEL PADRON": {
+            "population": {
+                "total_population": 16399,
+                "VARONES": 7495,
+                "HEMBRAS": 8904,
+                "Habitantes_por_edad": {
+                    "0-15": 2994,
+                    "16-59": 10088,
+                    "60 y +": 3317
+                }
+            },
+            "Escuelas": {
+                "Total": 81,
+                "Circulos infantiles": 17,
+                "Primaria": 42,
+                "Media": 14,
+                "Secundaria basica": 10,
+                "Preuniversitario": 2,
+                "Tecnica y profesional": 2
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.91
+        },
+        "DIEZ DE OCTUBRE": {
+            "population": {
+                "total_population": 20740,
+                "VARONES": 9604,
+                "HEMBRAS": 11137,
+                "Habitantes_por_edad": {
+                    "0-15": 3158,
+                    "16-59": 13077,
+                    "60 y +": 4506
+                }
+            },
+            "Escuelas": {
+                "Total": 115,
+                "Circulos infantiles": 38,
+                "Primaria": 45,
+                "Media": 25,
+                "Secundaria basica": 17,
+                "Preuniversitario": 4,
+                "Tecnica y profesional": 4
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.87
+        }
+    },
+    "Comorbilidades": {
+        "hipertension_arterial": 25.01,
+        "asma": 10.41,
+        "diabetes": 7.98,
+        "enfermedad_cerebrovascular": 0.86
+    },
+    "total_empresas": 515,
+    "total_tiendas": 101,
+    "Escuelas_Total": {
+        "Total": 117,
+        "Circulos infantiles": 35,
+        "Primaria": 46,
+        "Media": 27,
+        "Secundaria": 18,
+        "Preuniversitario": 3,
+        "Tecnica y profesional": 5
+    }
+}

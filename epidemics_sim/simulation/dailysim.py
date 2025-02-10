@@ -4,7 +4,7 @@ from epidemics_sim.agents.base_agent import State
 from multiprocessing import Pool
 
 class DailySimulation:
-    def __init__(self, agents, cluster_generator, transport, config, disease_model, policies, healthcare_system, initial_infected=5):
+    def __init__(self, agents, cluster_generator, transport, config, disease_model, policies, healthcare_system, initial_infected=15):
         """
         Initialize the daily simulation controller.
 
@@ -77,9 +77,11 @@ class DailySimulation:
             self.healthcare_system.daily_operations(self.agents.values(), self.clusters,sum([len(interactions) for interactions in daily_summary.values()]), day)
 
             # 4️⃣ Eliminar agentes muertos después de registrar estadísticas
-            for cluster in self.clusters.values():
-                cluster.remove_deceased_agents(self.agents)
+            deceased = [agent for agent in self.agents.values() if agent.infection_status["state"] == State.DECEASED]
             self.agents = {agent_id: agent for agent_id, agent in self.agents.items() if agent.infection_status["state"] != State.DECEASED}
+
+            for cluster in self.clusters.values():
+                cluster.remove_deceased_agents(deceased)
 
 
             week_counter +=1
@@ -105,9 +107,8 @@ class DailySimulation:
         #         ("morning",),
         #         ("daytime",),
         #         ("evening",),
-        #         ("night",)
         #     ])
-        # daily_interactions = dict(zip(["morning", "daytime", "evening", "night"], results))
+        # daily_interactions = dict(zip(["morning", "daytime", "evening"], results))
         daily_interactions = {
         "morning": self._simulate_morning(),
         "daytime": self._simulate_daytime(),
@@ -115,8 +116,8 @@ class DailySimulation:
         #"night": self._simulate_night()
         }
 
-        # 1️⃣ Excluir agentes hospitalizados o aislados
-        # Lo voy a dejar para ver si estan llegando los hospitalizados aqui ya que los quite en los clusters
+       # 1️⃣ Excluir agentes hospitalizados o aislados
+        #Lo voy a dejar para ver si estan llegando los hospitalizados aqui ya que los quite en los clusters
         filtered_interactions = { #TODO : Ver si se puede mejorar esto de manera que no se tenga que sacar despues de hecho
             period: [(a1, a2) for a1, a2 in interactions
                     if not (a1.is_hospitalized or a2.is_hospitalized or a1.is_isolated or a2.is_isolated)]

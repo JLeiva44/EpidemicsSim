@@ -3,23 +3,13 @@ import networkx as nx
 from epidemics_sim.agents.base_agent import State
 
 class Subcluster:
-    def __init__(self, agents,cluster, topology="scale_free"):
-        """
-        Inicializa un subcluster con un grafo estático y probabilidad de interacción ajustable.
-        
-        :param agents: Lista de agentes en el subcluster.
-        :param topology: Topología del grafo ("scale_free" o "complete").
-        :param interaction_probability: Probabilidad de que una conexión en el grafo genere una interacción.
-        """
+    def __init__(self, agents,parent_cluster, topology="scale_free", interaction_probability=0.7):
         self.agents = agents
+        self.parent_cluster = parent_cluster
         self.topology = topology
-        self.cluster = cluster
-        self.graph = self.generate_graph()  # Se genera una vez y no se vuelve a calcular en cada paso
+        self.interaction_probability = interaction_probability
 
     def generate_graph(self):
-        """
-        Genera un grafo basado en la topología especificada.
-        """
         num_agents = len(self.agents)
         if num_agents < 2:
             return nx.Graph()
@@ -37,53 +27,38 @@ class Subcluster:
 
         return graph
 
-    def remove_agent(self, agent):
-        """
-        Elimina un agente del grafo cuando fallece para evitar futuras interacciones.
-        """
-        for node in list(self.graph.nodes):
-            if self.graph.nodes[node]["agent"] == agent:
-                self.graph.remove_node(node)
-                break
+    def remove_deceased_agents(self,agents):
+        deseaced_agents = []
+        for agent in self.agents:
+            id = agent.agent_id
+            if agents[id].infection_status['state'] == State.DECEASED:
+                agent.infection_status['state'] = State.DECEASED
+        self.agents = [agent for agent in self.agents if agent.infection_status['state'] != State.DECEASED]      
+
 
     def simulate_interactions(self):
-        """
-        Simula interacciones dentro del subcluster basándose en la probabilidad de interacción.
-        """
+        graph = self.generate_graph()
         interactions = []
-        for edge in list(self.graph.edges):
-            agent1 = self.graph.nodes[edge[0]]['agent']
-            agent2 = self.graph.nodes[edge[1]]['agent']
-            
-            # Evitar interacciones con agentes fallecidos
-            if agent1.infection_status["state"] == State.DECEASED or agent2.infection_status["state"] == State.DECEASED:
-                continue
-
-            if agent1.is_hospitalized or agent2.is_hospitalized or agent1.is_isolated or agent2.is_isolated:
-                continue
-
-            if random.random() < self.cluster.interaction_probability:
+        for edge in graph.edges:
+            if random.random() < self.parent_cluster.interaction_probability:
+                agent1 = graph.nodes[edge[0]]['agent']
+                agent2 = graph.nodes[edge[1]]['agent']
+                if agent1.is_hospitalized or agent1.is_isolated or agent2.is_hospitalized or agent2.is_isolated:
+                    continue  # Skip agents who shouldn't interact
                 interactions.append((agent1, agent2))
-        
         return interactions
-    
-    def adjust_interaction_probability(self, new_probability):
-        """
-        Permite ajustar la probabilidad de interacción sin modificar la estructura del grafo.
-        """
-        self.interaction_probability = new_probability
-        
 
 class ClusterWithSubclusters:
-    def __init__(self, subclusters, cluster_type, active_periods ,interaction_probability):
-        """
-        Agrupa varios subclusters dentro de un tipo de cluster (hogares, trabajo, etc.).
-        """
+    def __init__(self, subclusters, cluster_type, active_periods, interaction_probability):
         self.subclusters = subclusters
         self.cluster_type = cluster_type
         self.active_periods = active_periods
         self.lockdown_is_active = False
         self.interaction_probability = interaction_probability
+
+    def remove_deceased_agents(self,agents):
+        for subcluster in self.subclusters:
+            subcluster.remove_deceased_agents(agents)
 
     def enforce_lockdown(self):
         self.lockdown_is_active = True
@@ -92,35 +67,11 @@ class ClusterWithSubclusters:
         self.lockdown_is_active = False
 
     def simulate_interactions(self, time_period):
-        """
-        Simula interacciones en todos los subclusters durante un período activo.
-        """
         interactions = []
         if not self.lockdown_is_active and time_period in self.active_periods:
             for subcluster in self.subclusters:
                 interactions.extend(subcluster.simulate_interactions())
         return interactions
-    
-    def adjust_interaction_probability(self, new_probability):
-        """
-        Permite ajustar la probabilidad de interacción sin modificar la estructura del grafo.
-        """
-        self.interaction_probability = new_probability
-        
-    # def adjust_cluster_interactions(self, new_probability):
-    #     """
-    #     Ajusta la probabilidad de interacción en todos los subclusters de este cluster.
-    #     """
-    #     for subcluster in self.subclusters:
-    #         subcluster.adjust_interaction_probability(new_probability)
-
-    def remove_deceased_agents(self, deceased_agents):
-        """
-        Elimina agentes fallecidos de todos los subclusters del cluster.
-        """
-        for subcluster in self.subclusters:
-            for agent in deceased_agents:
-                subcluster.remove_agent(agent)
 
 class CityClusterGenerator:
     def __init__(self, municipal_data):

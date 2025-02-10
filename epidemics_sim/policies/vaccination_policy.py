@@ -1,5 +1,6 @@
 import random
 from epidemics_sim.policies.base_policy import Policy
+from epidemics_sim.agents.base_agent import State
 
 class VaccinationPolicy(Policy):
     def __init__(self, vaccination_rate=0.05, vaccine_efficacy=0.8):
@@ -18,7 +19,7 @@ class VaccinationPolicy(Policy):
         :param agents: Diccionario de agentes en la simulación.
         :param clusters: Diccionario de clusters en la simulación.
         """
-        unvaccinated_agents = [agent for agent in agents.values() if not agent.vaccinated and agent.id not in self.vaccinated_agents]
+        unvaccinated_agents = [agent for agent in agents if not agent.infection_status["state"] != State.Infected and  agent.vaccinated and agent.agent_id not in self.vaccinated_agents]
 
         if not unvaccinated_agents:
             print("✅ Todos los agentes elegibles han sido vacunados.")
@@ -31,8 +32,8 @@ class VaccinationPolicy(Policy):
         for agent in agents_to_vaccinate:
             agent.vaccinated = True
             agent.vaccine_effectiveness = self.vaccine_efficacy
-            self.vaccinated_agents.add(agent.id)  # Registrar vacunados
-            print(f"💉 Agente {agent.id} vacunado con efectividad {self.vaccine_efficacy * 100:.1f}%.")
+            self.vaccinated_agents.add(agent.agent_id)  # Registrar vacunados
+            print(f"💉 Agente {agent.agent_id} vacunado con efectividad {self.vaccine_efficacy * 100:.1f}%.")
 
         return False    
 

@@ -22,22 +22,24 @@ class SimulationController:
         self.demographics = demographics
         self.config = config
         self.disease_model_class = disease_model_class
-        self.policies = self._configurate_policies(policies) #[policy() for policy in policies]
+        self.policies = policies #self._configurate_policies(policies) #[policy() for policy in policies]
         self.simulation_days = simulation_days
         self.agents = self._generate_agents()
         self.cluster_generator = CityClusterGenerator(demographics)
         #self.analyzer = SimulationAnalyzer()
 
-    def _configurate_policies(self, policies):
-        configured_policies = []
-        for policy in policies:
-            if policy.__name__ == "LockdownPolicy":
-                configured_policies.append(LockdownPolicy())  # Restricted_clusters arg
-            elif policy.__name__ == "SocialDistancingPolicy":
-                configured_policies.append(SocialDistancingPolicy(0.5))  # Social_distance_factor arg
-            elif policy.__name__ == "VaccinationPolicy":
-                configured_policies.append(VaccinationPolicy(0.5, 0.8))  # Vaccination_rate arg
-        return configured_policies
+    # def _configurate_policies(self, policies):
+    #     configured_policies = []
+    #     for policy in policies:
+    #         if policy.__name__ == "LockdownPolicy":
+    #             configured_policies.append(LockdownPolicy())  # Restricted_clusters arg
+    #         elif policy.__name__ == "SocialDistancingPolicy":
+    #             configured_policies.append(SocialDistancingPolicy(0.5))  # Social_distance_factor arg
+    #         elif policy.__name__ == "VaccinationPolicy":
+    #             configured_policies.append(VaccinationPolicy(0.5, 0.8))  # Vaccination_rate arg
+    #         elif policy.__name__ ==   "MaskUsagePolicy":
+    #             configured_policies.append()  
+    #     return configured_policies
     
     def _generate_agents(self):
         """
