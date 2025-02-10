@@ -2,7 +2,7 @@ import random
 from epidemics_sim.healthcare.deep2 import SimulationAnalyzer
 from epidemics_sim.policies.vaccination_policy import VaccinationPolicy
 from epidemics_sim.policies.lockdown_policy import LockdownPolicy
-from epidemics_sim.policies.mask_policy import MaskPolicy
+from epidemics_sim.policies.mask_policy import MaskUsagePolicy
 from epidemics_sim.policies.social_distancing_policy import SocialDistancingPolicy
 from epidemics_sim.agents.base_agent import State
 
@@ -90,7 +90,7 @@ class HealthcareSystem:
         applicable_policies = {
             LockdownPolicy: "Cuarentena",
             SocialDistancingPolicy: "Distanciamiento Social",
-            MaskPolicy: "Uso obligatorio de mascarillas",
+            MaskUsagePolicy: "Uso obligatorio de mascarillas",
             VaccinationPolicy: "Campaña de vacunación"
         }
 
@@ -135,4 +135,11 @@ class HealthcareSystem:
 
     def daily_operations(self, agents, clusters, interactions, day):
         self.monitor_health_status(agents, interactions)
+        # 📌 Verificar si la política de vacunación está activa y continuar vacunando progresivamente
+        if self.active_policies.get(VaccinationPolicy, False):
+            for policy in self.policies:
+                if isinstance(policy, VaccinationPolicy):
+                    total_vaccination = policy.enforce(agents, clusters)  # Continúa vacunando
+                    if total_vaccination :
+                        self.remove_policies(agents,clusters, VaccinationPolicy)
         self.evaluate_policies(agents, clusters, day)

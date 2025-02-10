@@ -120,12 +120,12 @@ class DiseaseModel(ABC):
 
         # Adjust for vaccination status
         if target.vaccinated:
-            probability *= 0.5 # ver si pongo esto : (1 - target.vaccine_effectiveness)
+            probability = (1 - target.vaccine_effectiveness)
 
-        # Adjust for mask usage
-        if source.mask_usage or target.mask_usage:
-            probability *= 0.7
+        source_mask_factor = source.mask.get("reduction_factor", 1.0) if source.mask.get("usage", False) else 1.0
+        target_mask_factor = target.mask.get("reduction_factor", 1.0) if target.mask.get("usage", False) else 1.0
 
+        probability *= source_mask_factor * target_mask_factor  # Se multiplica el efecto de ambas mascarillas
         return probability
 
 

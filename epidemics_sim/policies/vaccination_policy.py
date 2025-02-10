@@ -1,62 +1,43 @@
-from epidemics_sim.policies.base_policy import Policy
 import random
+from epidemics_sim.policies.base_policy import Policy
 
 class VaccinationPolicy(Policy):
-    def __init__(self, vaccination_rate, effectiveness, target_groups=None):
+    def __init__(self, vaccination_rate=0.05, vaccine_efficacy=0.8):
         """
-        Initialize the vaccination policy.
-
-        :param vaccination_rate: Daily percentage of the population to vaccinate.
-        :param effectiveness: Vaccine effectiveness (reduction in infection probability).
-        :param target_groups: Optional list of target groups (e.g., 'elderly', 'healthcare workers').
+        :param vaccination_rate: Proporción de la población a vacunar por día (ej. 0.05 = 5% diario).
+        :param vaccine_efficacy: Porcentaje de reducción en la probabilidad de infección (0-1).
         """
         self.vaccination_rate = vaccination_rate
-        self.effectiveness = effectiveness
-        self.target_groups = target_groups or []
+        self.vaccine_efficacy = vaccine_efficacy
+        self.vaccinated_agents = set()  # 🔹 Usamos un set para llevar registro de vacunados
 
     def enforce(self, agents, clusters):
         """
-        Apply vaccination to the population based on the policy parameters.
-
-        :param agents: List of agents in the simulation.
-        :param clusters: Dictionary of clusters in the simulation.
+        Aplica la vacunación progresivamente a la población.
+        
+        :param agents: Diccionario de agentes en la simulación.
+        :param clusters: Diccionario de clusters en la simulación.
         """
-        eligible_agents = [agent for agent in agents if not agent.vaccinated]
+        unvaccinated_agents = [agent for agent in agents.values() if not agent.vaccinated and agent.id not in self.vaccinated_agents]
 
-        # Filter by target groups if specified
-        if self.target_groups:
-            eligible_agents = self._filter_by_target_groups(eligible_agents)
+        if not unvaccinated_agents:
+            print("✅ Todos los agentes elegibles han sido vacunados.")
+            return True # 🚨 Si ya todos están vacunados, terminamos
 
-        # Determine the number of agents to vaccinate
-        num_to_vaccinate = int(len(agents) * self.vaccination_rate)
-        agents_to_vaccinate = random.sample(eligible_agents, min(num_to_vaccinate, len(eligible_agents)))
+        num_to_vaccinate = max(1, int(len(unvaccinated_agents) * self.vaccination_rate))  # 🔹 Vacunar un % del total
+
+        agents_to_vaccinate = random.sample(unvaccinated_agents, num_to_vaccinate)
 
         for agent in agents_to_vaccinate:
-            self._vaccinate_agent(agent)
+            agent.vaccinated = True
+            agent.vaccine_effectiveness = self.vaccine_efficacy
+            self.vaccinated_agents.add(agent.id)  # Registrar vacunados
+            print(f"💉 Agente {agent.id} vacunado con efectividad {self.vaccine_efficacy * 100:.1f}%.")
 
-    def _filter_by_target_groups(self, agents):
+        return False    
+
+    def delete(self, agents, clusters):
         """
-        Filter agents based on the specified target groups.
-
-        :param agents: List of agents to filter.
-        :return: Filtered list of agents.
+        Elimina la política de vacunación. **Nota:** No revierte las vacunas aplicadas.
         """
-        filtered_agents = []
-        for agent in agents:
-            if "elderly" in self.target_groups and agent.age > 60:
-                filtered_agents.append(agent)
-            if "healthcare_workers" in self.target_groups and agent.occupation == "healthcare_worker":
-                filtered_agents.append(agent)
-            if "essential_workers" in self.target_groups and agent.occupation in ["worker", "teacher"]:
-                filtered_agents.append(agent)
-        return filtered_agents
-
-    def _vaccinate_agent(self, agent):
-        """
-        Vaccinate an agent, modifying their attributes.
-
-        :param agent: The agent to vaccinate.
-        """
-        agent.vaccinated = True
-        agent.vaccine_effectiveness = self.effectiveness
-
+        print("🛑 Política de vacunación eliminada. No se administrarán más dosis.")

@@ -1,52 +1,44 @@
 from epidemics_sim.policies.base_policy import Policy
-import random
 
 class SocialDistancingPolicy(Policy):
-    def __init__(self, reduction_factor):
+    def __init__(self, reduction_factor=0.5):
         """
-        Initialize the social distancing policy.
+        Inicializa la política de distanciamiento social.
 
-        :param reduction_factor: Factor by which to reduce interactions (e.g., 0.5 for 50% reduction).
+        :param reduction_factor: Factor por el cual se reducirá la probabilidad de interacción en los clusters.
         """
         self.reduction_factor = reduction_factor
+        self.affected_clusters = {}  # Para almacenar el valor original de interacción de cada cluster
 
     def enforce(self, agents, clusters):
         """
-        Apply social distancing by reducing edges in the interaction graphs.
+        Aplica la política de distanciamiento social reduciendo la probabilidad de interacción en los clusters.
 
-        :param agents: List of agents in the simulation.
-        :param clusters: Dictionary of clusters in the simulation.
+        :param agents: Diccionario de agentes (no se usa en esta política).
+        :param clusters: Diccionario de clusters en la simulación.
         """
-        for cluster_list in clusters.values():
-            for cluster in cluster_list:
-                graph = cluster.generate_graph()
-                edges_to_remove = int(len(graph.edges) * (1 - self.reduction_factor))
-                edges = list(graph.edges)
-                random.shuffle(edges)
-                for _ in range(edges_to_remove):
-                    edge = edges.pop()
-                    graph.remove_edge(*edge)
+        self.affected_clusters = {}  # Reset de valores originales antes de aplicar
 
+        for cluster_type, cluster in clusters.items():
+            original_prob = cluster.interaction_probability
+            new_prob = original_prob * self.reduction_factor
+            self.affected_clusters[cluster] = original_prob  # Guardar el valor original
+            cluster.interaction_probability = max(0.05, new_prob)  # Límite inferior para evitar 0 absoluto
 
-# class SocialDistancing(BasePolicy):
-#     def __init__(self, reduction_factor):
-#         """
-#         Specific implementation of a social distancing policy.
+        print(f"📉 Política de Distanciamiento Social aplicada. Reducción de interacción en un {self.reduction_factor * 100:.0f}%")
 
-#         :param reduction_factor: Factor by which interactions are reduced (0 to 1).
-#         """
-#         super().__init__(
-#             name="Social Distancing",
-#             description="Reduce the frequency of interactions between agents."
-#         )
-#         self.reduction_factor = reduction_factor
+    def delete(self, agents, clusters):
+        """
+        Revierte la política restaurando la probabilidad de interacción original en los clusters.
 
-#     def apply(self, environment):
-#         """
-#         Apply social distancing by reducing interaction probabilities.
+        :param agents: Diccionario de agentes (no se usa en esta política).
+        :param clusters: Diccionario de clusters en la simulación.
+        """
+        for cluster, original_prob in self.affected_clusters.items():
+            cluster.interaction_probability = original_prob  # Restaurar valor original
 
-#         :param environment: An instance of BaseEnvironment or its subclasses.
-#         """
-#         for agent in environment.agents:
-#             agent.attributes["interaction_reduction"] = self.reduction_factor
-#         print(f"Social distancing applied to environment {environment.name} with reduction factor {self.reduction_factor}.")
+        self.affected_clusters = {}  # Limpiar estado
+        print("🔄 Se ha eliminado la Política de Distanciamiento Social. Se restauraron las interacciones.")
+
+    def __str__(self):
+        return "Social Distancing Policy"

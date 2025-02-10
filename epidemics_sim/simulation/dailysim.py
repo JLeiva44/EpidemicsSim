@@ -58,11 +58,11 @@ class DailySimulation:
 
             # 1️⃣ Simular interacciones y propagación
             daily_summary = self.simulate_day()
-            print(f"Daily Interactions: ")
-            print(f"morning: {len(daily_summary['morning'])}")
-            print(f"daytime: {len(daily_summary['daytime'])}")
-            print(f"evening: {len(daily_summary['evening'])}")
-            print(f"night: {len(daily_summary['night'])}")
+            print(f"Daily Interactions DONE")
+            # print(f"morning: {len(daily_summary['morning'])}")
+            # print(f"daytime: {len(daily_summary['daytime'])}")
+            # print(f"evening: {len(daily_summary['evening'])}")
+            # print(f"night: {len(daily_summary['night'])}")
             simulation_results.append(daily_summary)
 
             # 2️⃣ Propagar enfermedad solo con los agentes activos
@@ -112,7 +112,7 @@ class DailySimulation:
         "morning": self._simulate_morning(),
         "daytime": self._simulate_daytime(),
         "evening": self._simulate_evening(),
-        "night": self._simulate_night()
+        #"night": self._simulate_night()
         }
 
         # 1️⃣ Excluir agentes hospitalizados o aislados

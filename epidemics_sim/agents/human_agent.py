@@ -31,7 +31,11 @@ class HumanAgent(BaseAgent):
         #self.infection_status = infection_status
         self.days_infected = 0  # Days since infection (reset upon recovery)
         self.vaccinated = False
-        self.mask_usage = False
+        self.vaccine_effectiveness = None
+        self.mask ={
+            "usage":False,
+            "reduction_factor" : 1
+        } 
         self.immune = False
         self.is_isolated = False
         self.is_hospitalized = False
