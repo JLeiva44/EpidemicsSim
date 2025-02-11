@@ -26,6 +26,7 @@ class HumanAgent(BaseAgent):
         self.gender = gender
         self.occupation = occupation
         self.household_id = household_id
+        self.household = []
         self.municipio = municipio
         self.comorbidities = comorbidities or []
         #self.infection_status = infection_status
