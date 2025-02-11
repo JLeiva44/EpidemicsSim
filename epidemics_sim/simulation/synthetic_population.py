@@ -2,17 +2,17 @@ import pickle  # Para serialización y deserialización
 from epidemics_sim.agents.human_agent import HumanAgent
 import random
 
-def get_large_household_size():
-    distribution = {5: 0.5, 6: 0.3, 7: 0.15, 8: 0.05}
-    return random.choices(list(distribution.keys()), list(distribution.values()))[0]
+# def get_large_household_size():
+#     distribution = {5: 0.5, 6: 0.3, 7: 0.15, 8: 0.05}
+#     return random.choices(list(distribution.keys()), list(distribution.values()))[0]
 
-size_mapping = {
-    "1_persona": 1,
-    "2_personas": 2,
-    "3_personas": 3,
-    "4_personas": 4,
-    "5_personas_o_mas": get_large_household_size
-}
+# size_mapping = {
+#     "1_persona": 1,
+#     "2_personas": 2,
+#     "3_personas": 3,
+#     "4_personas": 4,
+#     "5_personas_o_mas": get_large_household_size
+# }
 
 class SyntheticPopulationGenerator:
     def __init__(self, demographics):
@@ -76,16 +76,37 @@ class SyntheticPopulationGenerator:
         #return agents
 
     def _generate_age(self, age_distribution):
+        # Rango de edades
         ranges = list(age_distribution.keys())
-        probabilities = [float(age_distribution[r]) for r in ranges]
+        
+        # Frecuencias absolutas (número de personas en cada rango)
+        frequencies = [age_distribution[r] for r in ranges]
+        
+        # Calculamos la probabilidad de cada rango dividiendo por el total
+        total_population = sum(frequencies)
+        probabilities = [f / total_population for f in frequencies]
+        
+        # Elegimos un rango de edad con las probabilidades calculadas
         chosen_range = random.choices(ranges, probabilities)[0]
-
+        
+        # Generamos un valor dentro del rango de edad seleccionado
         if chosen_range == "0-15":
             return random.randint(0, 15)
         elif chosen_range == "16-59":
             return random.randint(16, 59)
         elif chosen_range == "60 y +":
             return random.randint(60, 100)
+    # def _generate_age(self, age_distribution):
+    #     ranges = list(age_distribution.keys())
+    #     probabilities = [float(age_distribution[r]) for r in ranges]
+    #     chosen_range = random.choices(ranges, probabilities)[0]
+
+    #     if chosen_range == "0-15":
+    #         return random.randint(0, 15)
+    #     elif chosen_range == "16-59":
+    #         return random.randint(16, 59)
+    #     elif chosen_range == "60 y +":
+    #         return random.randint(60, 100)
 
     def _generate_occupation(self, age):
         if age < 18:

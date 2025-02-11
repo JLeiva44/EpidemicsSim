@@ -2,9 +2,9 @@ import pandas as pd
 import json
 
 # Cargar los archivos CSV con la codificación correcta
-poblacion_path = "epidemics_sim/data/csv_files/poblacion.csv"
-comorbilidades_path = "epidemics_sim/data/csv_files/comorbilidades.csv"
-escuelas_path = "epidemics_sim/data/csv_files/escuelas.csv"
+poblacion_path = "epidemics_sim/data/habana/csv_files/poblacion.csv"
+comorbilidades_path = "epidemics_sim/data/habana/csv_files/comorbilidades.csv"
+escuelas_path = "epidemics_sim/data/habana/csv_files/escuelas.csv"
 
 poblacion_df = pd.read_csv(poblacion_path, encoding="utf-8")
 comorbilidades_df = pd.read_csv(comorbilidades_path, encoding="utf-8")
@@ -91,7 +91,7 @@ json_data = {
 }
 
 # Guardar en un archivo JSON
-json_path = "epidemics_sim/data/json_files/habana.json"
+json_path = "epidemics_sim/data/habana/json_files/habana.json"
 with open(json_path, "w", encoding="utf-8") as json_file:
     json.dump(json_data, json_file, ensure_ascii=False, indent=4)
 

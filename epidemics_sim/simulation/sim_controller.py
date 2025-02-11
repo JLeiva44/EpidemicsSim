@@ -4,12 +4,13 @@ from epidemics_sim.simulation.dailysim import DailySimulation
 from epidemics_sim.policies.lockdown_policy import LockdownPolicy
 from epidemics_sim.policies.social_distancing_policy import SocialDistancingPolicy
 from epidemics_sim.policies.vaccination_policy import VaccinationPolicy
+from epidemics_sim.policies.mask_policy import MaskUsagePolicy
 from epidemics_sim.simulation.synthetic_population import SyntheticPopulationGenerator #TODO: Cambiar esto a intethic
 from epidemics_sim.simulation.transport_interaction import TransportInteraction
 from epidemics_sim.healthcare.healthcare_system import HealthcareSystem
 
 class SimulationController:
-    def __init__(self, demographics, config, disease_model_class, policies, simulation_days):
+    def __init__(self, demographics, disease, policies_config, simulation_days, initial_infected):
         """
         Initialize the simulation controller.
 
@@ -20,26 +21,46 @@ class SimulationController:
         :param simulation_days: Number of days to simulate.
         """
         self.demographics = demographics
-        self.config = config
-        self.disease_model_class = disease_model_class
-        self.policies = policies #self._configurate_policies(policies) #[policy() for policy in policies]
+        self.disease_model = disease
+        self.policies_config = policies_config 
         self.simulation_days = simulation_days
+        self.initial_infected = initial_infected
         self.agents = self._generate_agents()
         self.cluster_generator = CityClusterGenerator(demographics)
-        #self.analyzer = SimulationAnalyzer()
-
-    # def _configurate_policies(self, policies):
-    #     configured_policies = []
-    #     for policy in policies:
-    #         if policy.__name__ == "LockdownPolicy":
-    #             configured_policies.append(LockdownPolicy())  # Restricted_clusters arg
-    #         elif policy.__name__ == "SocialDistancingPolicy":
-    #             configured_policies.append(SocialDistancingPolicy(0.5))  # Social_distance_factor arg
-    #         elif policy.__name__ == "VaccinationPolicy":
-    #             configured_policies.append(VaccinationPolicy(0.5, 0.8))  # Vaccination_rate arg
-    #         elif policy.__name__ ==   "MaskUsagePolicy":
-    #             configured_policies.append()  
-    #     return configured_policies
+        self.policies = self._configurate_policies()
+        self.heathcare_system = HealthcareSystem(5000, 10000, self.policies, self.demographics["municipios"])
+        
+    def _configurate_policies(self, policies):
+        """
+        Configura las políticas de la simulación según el diccionario 'policies'.
+        
+        :param policies: Diccionario con las políticas de la simulación.
+        """
+        policies = []
+        # Configuración de la política de confinamiento (lockdown)
+        if "lockdown" in policies:
+            lockdown_config = policies["lockdown"]
+            policies.append(LockdownPolicy(restricted_clusters=lockdown_config.get("restricted_clusters", [])))
+        
+        # Configuración de la política de uso de mascarillas (mask)
+        if "mask" in policies:
+            mask_config = policies["mask"]
+            policies.append(MaskUsagePolicy(transmission_reduction_factor=mask_config.get("transmission_reduction_factor", 0)))
+        
+        # Configuración de la política de distanciamiento social (social_distancing)
+        if "social_distancing" in policies:
+            distancing_config = policies["social_distancing"]
+            policies.append(SocialDistancingPolicy(reduction_factor=distancing_config.get("reduction_factor", 1)))
+            
+        
+        # Configuración de la política de vacunación (vaccination)
+        if "vaccination" in policies:
+            vaccination_config = policies["vaccination"]
+            policies.append(VaccinationPolicy(vaccination_rate=vaccination_config.get("vaccination_rate", 0), vaccine_efficacy=vaccination_config.get("vaccine_efficacy", 0)))
+           
+        
+        print("Políticas configuradas:")
+        return policies
     
     def _generate_agents(self):
         """
@@ -65,36 +86,20 @@ class SimulationController:
 
         :return: Results of the simulation.
         """
-        # Generate transport interactions
-        #transport_interaction = TransportInteraction(self.agents, self.config["transport"])
-
-        # Initialize the disease model
-        disease_model = self.disease_model_class(**self.config["disease"])
-
-        # Initialize the HealthCare System TODO: Meter las capacidades en el json
-        healthcare_system = HealthcareSystem(5000, 10000,self.policies, self.demographics["municipios"]) # Aqui tengo que anadir las politicas
-
+        
         # Initialize daily simulation
         daily_simulation = DailySimulation(
             agents=self.agents,
             cluster_generator=self.cluster_generator,
-            transport=None,
-            config=self.config,
-            disease_model=disease_model,
+            disease_model=self.disease_model,
             policies=self.policies,
-            healthcare_system=healthcare_system,
+            healthcare_system=self.healthcare_system,
+            initial_infected= self.initial_infected
         )
 
         # Run simulation for the specified number of days
         simulation_results = daily_simulation.simulate(self.simulation_days)
 
-        # # Record daily statistics
-        # for _ in range(self.simulation_days):
-        #     self.analyzer.record_daily_stats(self.agents)
-
-        # Generate results
-        # report = self.analyzer.generate_report()
-        # self.analyzer.plot_statistics()
 
         return simulation_results
 

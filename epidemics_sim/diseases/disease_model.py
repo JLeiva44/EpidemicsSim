@@ -7,11 +7,12 @@ class DiseaseModel(ABC):
         self,
         name,
         transmission_rate,
-        incubation_period,
+        mean_incubation_period,
         asymptomatic_probability,
         base_mortality_rate,
         recovery_rates,
         severity_durations,
+        progresion_rates,
         immunity_duration=0,  # Nueva variable: define duración de la inmunidad
     ):
         """
@@ -29,12 +30,13 @@ class DiseaseModel(ABC):
         self.name = name
         self.transmission_rate = transmission_rate
         print(f"El rate de trasnmision es " ,self.transmission_rate)
-        self.incubation_period = incubation_period
+        self.mean_incubation_period = mean_incubation_period
         self.asymptomatic_probability = asymptomatic_probability
         self.base_mortality_rate = base_mortality_rate
         self.recovery_rates = recovery_rates
         self.severity_durations = severity_durations
         self.immunity_duration = immunity_duration  # Guardamos el tiempo de inmunidad
+        self.progression_rates = progresion_rates
 
     
     def initialize_infections(self, agents):
@@ -136,7 +138,8 @@ class DiseaseModel(ABC):
         :param agent: The agent whose infection state is being progressed.
         """
         if agent.infection_status["days_infected"] == 0:
-            agent.incubation_period = self.incubation_period()
+            incubation_period = random.gauss(self.mean_incubation_period[0], self.mean_incubation_period[1])
+            agent.incubation_period = max(incubation_period, 0)
 
         agent.infection_status["days_infected"] += 1
         days_infected = agent.infection_status["days_infected"]
@@ -178,21 +181,21 @@ class DiseaseModel(ABC):
         recovery_bonus = 1.3 if agent.is_hospitalized else 1.0  
 
         # Probabilidad base de progresión según severidad
-        progression_rates = {
-            "asymptomatic": 0,
-            "mild": 0.15,        # 15% de pasar a moderado
-            "moderate": 0.25,    # 25% de pasar a severo
-            "severe": 0.40,      # 40% de pasar a crítico
-        }
+        # progression_rates = {
+        #     "asymptomatic": 0,
+        #     "mild": 0.15,        # 15% de pasar a moderado
+        #     "moderate": 0.25,    # 25% de pasar a severo
+        #     "severe": 0.40,      # 40% de pasar a crítico
+        # }
 
         # Obtener la mortalidad ajustada del agente
         mortality_risk = self.calculate_critical_mortality_rate(agent.mortality_rate)
 
         # 📌 **Nueva Fórmula**: Probabilidad combinada usando logaritmo
-        progression_probability = progression_rates.get(severity, 0) * math.log(1 + agent.mortality_rate * 10)
+        progression_probability = self.progression_rates.get(severity, 0) * math.log(1 + agent.mortality_rate * 10)
 
         # Evaluar si el paciente empeora
-        if severity in progression_rates and random.random() < progression_probability:
+        if severity in self.progression_rates and random.random() < progression_probability:
             new_severity = {
                 "mild": "moderate",
                 "moderate": "severe",

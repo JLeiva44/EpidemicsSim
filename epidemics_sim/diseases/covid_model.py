@@ -5,21 +5,22 @@ import random
 
 class CovidModel(DiseaseModel):
     def __init__(
-        self, transmission_rate, incubation_period, asymptomatic_probability, base_mortality_rate
+        self, transmission_rate, incubation_period, asymptomatic_probability, base_mortality_rate,
+        immunity_duration, recovery_rates, severity_durations, progression_rates
     ):
-        recovery_rates = {
-            "asymptomatic": 0.99,
-            "mild": 0.98,
-            "moderate": 0.85,
-            "severe": 0.6,
-            "critical": 0.3,
-        }
-        severity_durations = {
-            "mild": 7,
-            "moderate": 14,
-            "severe": 21,
-            "critical": 28,
-        }
+        # recovery_rates = {
+        #     "asymptomatic": 0.99,
+        #     "mild": 0.98,
+        #     "moderate": 0.85,
+        #     "severe": 0.6,
+        #     "critical": 0.3,
+        # }
+        # severity_durations = {
+        #     "mild": 7,
+        #     "moderate": 14,
+        #     "severe": 21,
+        #     "critical": 28,
+        # }
         super().__init__(
             "COVID-19",
             transmission_rate,
@@ -28,7 +29,7 @@ class CovidModel(DiseaseModel):
             base_mortality_rate,
             recovery_rates,
             severity_durations,
-            immunity_duration=0,  # COVID-19: 90 días de inmunidad
+            immunity_duration,  # COVID-19: 90 días de inmunidad
         )
 
     def determine_severity(self, agent): # TODO: ver si el agente esta vacunado

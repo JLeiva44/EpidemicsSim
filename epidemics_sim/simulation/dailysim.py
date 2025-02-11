@@ -4,7 +4,7 @@ from epidemics_sim.agents.base_agent import State
 from multiprocessing import Pool
 
 class DailySimulation:
-    def __init__(self, agents, cluster_generator, transport, config, disease_model, policies, healthcare_system, initial_infected=15):
+    def __init__(self, agents, cluster_generator, disease_model, policies, healthcare_system, initial_infected):
         """
         Initialize the daily simulation controller.
 
@@ -20,8 +20,7 @@ class DailySimulation:
         """
         self.agents = agents
         self.cluster_generator = cluster_generator
-        self.transport = transport
-        self.config = config
+        
         self.disease_model = disease_model
         self.policies = policies
         self.healthcare_system = healthcare_system
