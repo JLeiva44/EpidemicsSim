@@ -1,5 +1,5 @@
 import random
-from epidemics_sim.healthcare.deep2 import SimulationAnalyzer
+from epidemics_sim.healthcare.analyzer import SimulationAnalyzer
 from epidemics_sim.policies.vaccination_policy import VaccinationPolicy
 from epidemics_sim.policies.lockdown_policy import LockdownPolicy
 from epidemics_sim.policies.mask_policy import MaskUsagePolicy
@@ -67,7 +67,7 @@ class HealthcareSystem:
                 agent.is_isolated, agent.is_hospitalized = True, False
 
     def evaluate_policies(self, agents, clusters, day):
-        if self.days_since_last_evaluation < 10:
+        if self.days_since_last_evaluation < 7:
             self.days_since_last_evaluation += 1
             return
 
@@ -76,15 +76,19 @@ class HealthcareSystem:
         total_infected = sum(1 for agent in agents if agent.infection_status["state"] == State.INFECTED)
         infection_rate = total_infected / total_population if total_population > 0 else 0
         hospital_occupancy = len(self.hospitalized) / self.hospital_capacity
+        hospitalized = len(self.hospitalized)
+        isolated = len(self.isolated)
         
-        avg_cases_last_10_days = sum(self.daily_cases) / len(self.daily_cases) if self.daily_cases else 0
-        avg_deaths_last_10_days = sum(self.daily_deaths) / len(self.daily_deaths) if self.daily_deaths else 0
-        
+        avg_cases_last_10_days = sum(self.daily_cases[-10:]) / min(len(self.daily_cases), 7) if self.daily_cases else 0
+        avg_deaths_last_10_days = sum(self.daily_deaths[-10:]) / min(len(self.daily_deaths), 7) if self.daily_deaths else 0
+
         print("\n📊 Evaluación de la situación epidemiológica (Día", day, ")")
         print("Tasa de infección actual: {:.2%}".format(infection_rate))
+        print(f"Total de hospitalizados: {hospitalized}/{self.hospital_capacity}")
+        print(f"Total de aislados: {isolated}/{self.isolation_capacity}")
         print("Ocupación hospitalaria: {:.2%}".format(hospital_occupancy))
-        print("Promedio de casos diarios en los últimos 10 días: {:.2f}".format(avg_cases_last_10_days))
-        print("Promedio de muertes diarias en los últimos 10 días: {:.2f}".format(avg_deaths_last_10_days))
+        print("Promedio de casos diarios en los últimos 7 días: {:.2f}".format(avg_cases_last_10_days))
+        print("Promedio de muertes diarias en los últimos 7 días: {:.2f}".format(avg_deaths_last_10_days))
         print("Políticas activas:", [p.__name__ for p, active in self.active_policies.items() if active])
 
         applicable_policies = {

@@ -88,9 +88,9 @@ class SyntheticPopulationGenerator:
             return random.randint(60, 100)
 
     def _generate_occupation(self, age):
-        if age < 16:
+        if age < 18:
             return "student"
-        elif age < 60:
+        elif 18 <= age <= 22 and random.random() < 0.5: # 50 % de probabilidad
             return "worker"
         else:
             return "retired"

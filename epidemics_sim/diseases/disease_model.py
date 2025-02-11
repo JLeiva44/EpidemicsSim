@@ -164,6 +164,8 @@ class DiseaseModel(ABC):
                 agent.transition(State.INFECTED, reason=f"{self.name} infection ({severity})")
             return
 
+        severity = None
+        recovery_days = None
         # 3️⃣ PROGRESIÓN: Evaluar cambio de gravedad
         if not agent.infection_status["severity"] == "asymptomatic":
             severity = agent.infection_status.get("severity", "mild")
@@ -177,6 +179,7 @@ class DiseaseModel(ABC):
 
         # Probabilidad base de progresión según severidad
         progression_rates = {
+            "asymptomatic": 0,
             "mild": 0.15,        # 15% de pasar a moderado
             "moderate": 0.25,    # 25% de pasar a severo
             "severe": 0.40,      # 40% de pasar a crítico

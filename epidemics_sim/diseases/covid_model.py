@@ -8,6 +8,7 @@ class CovidModel(DiseaseModel):
         self, transmission_rate, incubation_period, asymptomatic_probability, base_mortality_rate
     ):
         recovery_rates = {
+            "asymptomatic": 0.99,
             "mild": 0.98,
             "moderate": 0.85,
             "severe": 0.6,

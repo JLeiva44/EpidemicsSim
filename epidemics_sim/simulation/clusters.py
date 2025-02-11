@@ -56,7 +56,7 @@ class Subcluster:
             agent2 = self.graph.nodes[edge[1]]['agent']
             
             # Evitar interacciones con agentes fallecidos
-            if self.cluster.type == "shopping":
+            if self.cluster.cluster_type == "shopping":
                 if agent1.infection_status['state'] == State.DECEASED or agent1.is_hospitalized or agent1.is_isolated:
                     self.update_shopping_agents(agent1)
                 elif agent2.infection_status['state'] == State.DECEASED or agent2.is_hospitalized or agent2.is_isolated:
@@ -178,8 +178,8 @@ class CityClusterGenerator:
     def generate_clusters(self, agents):
         return {
             "home": self.generate_home_clusters(agents),
-            "work": self.generate_work_clusters(agents),
             "school": self.generate_school_clusters(agents),
+            "work": self.generate_work_clusters(agents),
             "shopping": self.generate_shopping_clusters(agents),
         }
     
@@ -231,7 +231,7 @@ class CityClusterGenerator:
     def generate_work_clusters(self, agents):
         work_subclusters = []
         cluster = ClusterWithSubclusters(work_subclusters, "work", ["daytime"],interaction_probability=random.uniform(0.3,0.6))
-        workers = [agent for agent in agents if 18 <= agent.age <= 64]
+        workers = [agent for agent in agents if agent.occupation == "worker"]
         random.shuffle(workers)
 
         min_size, max_size = 5, 50  # Tamaño mínimo y máximo de cada empresa
@@ -306,7 +306,8 @@ class CityClusterGenerator:
                 if school_type not in school_age_mapping:
                     continue
                 age_range = school_age_mapping[school_type]
-                students = [agent for agent in agents if agent.municipio == municipio and age_range[0] <= agent.age <= age_range[1]]
+
+                students = [agent for agent in agents if agent.municipio == municipio and agent.occupation == "student" and age_range[0] <= agent.age <= age_range[1]]
                 random.shuffle(students)
 
                 school_sizes = [random.randint(20, 50) for _ in range(int(num_schools))]

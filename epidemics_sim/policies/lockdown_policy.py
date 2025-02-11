@@ -47,7 +47,7 @@ class LockdownPolicy(Policy):
         #             for agent in subcluster.agents:
         #                 agent.in_quarantine = True  # 🚨 Marcar a los agentes como en cuarentena
 
-        print(f"🚨 Lockdown enforced on clusters: {self.restricted_clusters}")
+        print(f"🚨 Lockdown delete on clusters: {self.restricted_clusters}")
 
     def __str__(self):
         return "Lockdown Policy"
