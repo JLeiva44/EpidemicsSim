@@ -75,43 +75,28 @@ class SyntheticPopulationGenerator:
             self.population[agent_id] = agent
         #return agents
 
+    
     def _generate_age(self, age_distribution):
-        # Rango de edades
         ranges = list(age_distribution.keys())
-        
-        # Frecuencias absolutas (número de personas en cada rango)
-        frequencies = [age_distribution[r] for r in ranges]
-        
-        # Calculamos la probabilidad de cada rango dividiendo por el total
-        total_population = sum(frequencies)
-        probabilities = [f / total_population for f in frequencies]
-        
-        # Elegimos un rango de edad con las probabilidades calculadas
+        probabilities = [float(age_distribution[r]) for r in ranges]
         chosen_range = random.choices(ranges, probabilities)[0]
-        
-        # Generamos un valor dentro del rango de edad seleccionado
+
         if chosen_range == "0-15":
             return random.randint(0, 15)
         elif chosen_range == "16-59":
             return random.randint(16, 59)
         elif chosen_range == "60 y +":
             return random.randint(60, 100)
-    # def _generate_age(self, age_distribution):
-    #     ranges = list(age_distribution.keys())
-    #     probabilities = [float(age_distribution[r]) for r in ranges]
-    #     chosen_range = random.choices(ranges, probabilities)[0]
-
-    #     if chosen_range == "0-15":
-    #         return random.randint(0, 15)
-    #     elif chosen_range == "16-59":
-    #         return random.randint(16, 59)
-    #     elif chosen_range == "60 y +":
-    #         return random.randint(60, 100)
 
     def _generate_occupation(self, age):
         if age < 18:
             return "student"
-        elif 18 <= age <= 22 and random.random() < 0.5: # 50 % de probabilidad
+        elif 18 <= age <= 22 :
+            if random.random() < 0.5: # 50 % de probabilidad
+                return "worker"
+            else :
+                return 'student'
+        elif age < 65:
             return "worker"
         else:
             return "retired"
