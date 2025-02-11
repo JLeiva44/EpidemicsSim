@@ -55,34 +55,37 @@ class DailySimulation:
             if week_counter == 7 :
                 week_counter = 0
             print(f"Simulating Day {day + 1}...")
+            print("...")
 
             # 1️⃣ Simular interacciones y propagación
-            daily_summary = self.simulate_day()
-            print(f"Daily Interactions DONE")
-            # print(f"morning: {len(daily_summary['morning'])}")
-            # print(f"daytime: {len(daily_summary['daytime'])}")
-            # print(f"evening: {len(daily_summary['evening'])}")
-            # print(f"night: {len(daily_summary['night'])}")
+            daily_summary = self.simulate_day(day)
+            
             simulation_results.append(daily_summary)
 
             # 2️⃣ Propagar enfermedad solo con los agentes activos
             self.disease_model.propagate(daily_summary)
 
+            
             # 2️⃣ Progresar la infección en los agentes
             for agent in self.agents.values():
                 if agent.infection_status['state'] == State.INFECTED:
                     self.disease_model.progress_infection(agent)
 
+            
+
             # 3️⃣ Ejecutar las operaciones del sistema de salud
             self.healthcare_system.daily_operations(self.agents.values(), self.clusters,sum([len(interactions) for interactions in daily_summary.values()]), day)
 
+            
+            
             # 4️⃣ Eliminar agentes muertos después de registrar estadísticas
             deceased = [agent for agent in self.agents.values() if agent.infection_status["state"] == State.DECEASED]
-            self.agents = {agent_id: agent for agent_id, agent in self.agents.items() if agent.infection_status["state"] != State.DECEASED}
+            if len(deceased) > 0:
+                self.agents = {agent_id: agent for agent_id, agent in self.agents.items() if agent.infection_status["state"] != State.DECEASED}
 
-            for cluster in self.clusters.values():
-                cluster.remove_deceased_agents(deceased)
-
+                # pOR AHORA SOLO LOS IGNORA, ASI OPTIMIZO EL CODIGO
+                # for cluster in self.clusters.values(): # ver si se puede optimizar para que solamente los 
+                #     cluster.remove_deceased_agents(deceased)
 
             week_counter +=1
 
@@ -90,7 +93,7 @@ class DailySimulation:
         self.healthcare_system.analyzer.generate_full_report()
 
 
-    def simulate_day(self):
+    def simulate_day(self, day):
         """
         Simulate a single day of interactions, ordered by time intervals.
 
@@ -112,20 +115,19 @@ class DailySimulation:
         daily_interactions = {
         "morning": self._simulate_morning(),
         "daytime": self._simulate_daytime(),
-        "evening": self._simulate_evening(),
-        #"night": self._simulate_night()
+        "evening": self._simulate_evening() if day % 7 == 0 else [],
         }
 
        # 1️⃣ Excluir agentes hospitalizados o aislados
         #Lo voy a dejar para ver si estan llegando los hospitalizados aqui ya que los quite en los clusters
-        filtered_interactions = { #TODO : Ver si se puede mejorar esto de manera que no se tenga que sacar despues de hecho
-            period: [(a1, a2) for a1, a2 in interactions
-                    if not (a1.is_hospitalized or a2.is_hospitalized or a1.is_isolated or a2.is_isolated)]
-            for period, interactions in daily_interactions.items()
-        }
+        # filtered_interactions = { #TODO : Ver si se puede mejorar esto de manera que no se tenga que sacar despues de hecho
+        #     period: [(a1, a2) for a1, a2 in interactions
+        #             if not (a1.is_hospitalized or a2.is_hospitalized or a1.is_isolated or a2.is_isolated)]
+        #     for period, interactions in daily_interactions.items()
+        # }
 
         
-        return filtered_interactions
+        return daily_interactions
 
     def _simulate_period(self, period, agents = None):
         """

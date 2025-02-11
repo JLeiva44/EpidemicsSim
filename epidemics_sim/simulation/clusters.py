@@ -56,6 +56,12 @@ class Subcluster:
             agent2 = self.graph.nodes[edge[1]]['agent']
             
             # Evitar interacciones con agentes fallecidos
+            if self.cluster.type == "shopping":
+                if agent1.infection_status['state'] == State.DECEASED or agent1.is_hospitalized or agent1.is_isolated:
+                    self.update_shopping_agents(agent1)
+                elif agent2.infection_status['state'] == State.DECEASED or agent2.is_hospitalized or agent2.is_isolated:
+                    self.update_shopping_agents(agent2)
+                continue    
             if agent1.infection_status["state"] == State.DECEASED or agent2.infection_status["state"] == State.DECEASED:
                 continue
 
@@ -72,7 +78,48 @@ class Subcluster:
         Permite ajustar la probabilidad de interacción sin modificar la estructura del grafo.
         """
         self.interaction_probability = new_probability
-        
+
+    def update_shopping_agents(self, agent):
+        """
+        Actualiza la lista de compradores si un agente fallece, está hospitalizado o aislado.
+        """
+        household_id = agent.household_id
+        household_members = [member for member in agent.hosehold if member.agent_id != agent.agent_id]
+        best_candidate = None
+        best_age = -1  # Almacena la mejor edad encontrada
+
+        # Buscar el mejor representante en una sola iteración
+        for member in household_members:
+            if member.infection_status["state"] == State.DECEASED or member.is_hospitalized or member.is_isolated:
+                continue  # Saltar agentes no disponibles
+
+            if member.age >= 18:
+                best_candidate = member  # Adulto disponible, mejor opción
+                break  # No es necesario seguir buscando
+
+            if member.age > best_age:  # Guardar el mejor candidato si no es adulto
+                best_candidate = member
+                best_age = member.age
+
+        # Remover el agente del grafo
+        for node in list(self.graph.nodes):
+            if self.graph.nodes[node]["agent"] == agent:
+                self.graph.remove_node(node)
+                break
+
+        # Si se encontró un nuevo representante, actualizar el cluster
+        if best_candidate and best_age >= 12:
+            self.agents.append(best_candidate)  # Agregar al nuevo representante
+            self.graph = self.generate_graph()  # Regenerar el grafo con el nuevo agente
+            # new_node = len(self.graph.nodes)  # Nuevo índice de nodo en el grafo
+            # self.graph.add_node(new_node, agent=best_candidate)
+
+            # Conectar con vecinos existentes en la red de compras
+            # for neighbor in self.graph.nodes:
+            #     if random.random() < 0.5:  # Probabilidad arbitraria de reconectar
+            #         self.graph.add_edge(new_node, neighbor)
+
+
 
 class ClusterWithSubclusters:
     def __init__(self, subclusters, cluster_type, active_periods ,interaction_probability):
@@ -171,11 +218,13 @@ class CityClusterGenerator:
                 # 🔹 Asignar un household_id único a todos los agentes en este hogar
                 for agent in household_agents:
                     agent.household_id = household_id_counter
+                    agent.household = household_agents
                 household_id_counter += 1  # Incrementar para el siguiente hogar
 
                 home_subclusters.append(Subcluster(household_agents,cluster, topology="complete"))
 
         cluster.subclusters = home_subclusters
+        print("Home clusters generated")
         return cluster
 
 
@@ -198,6 +247,7 @@ class CityClusterGenerator:
             work_subclusters.append(Subcluster(work_agents,cluster, topology="scale_free"))
         
         cluster.subclusters = work_subclusters
+        print("Work clusters generated")
         return cluster
     
     
@@ -233,6 +283,7 @@ class CityClusterGenerator:
             shopping_subclusters.append(Subcluster(shopping_agents,cluster, topology="scale_free"))
 
         cluster.subclusters = shopping_subclusters
+        print("Shopping clusters generated")
         return cluster
 
 
@@ -270,4 +321,5 @@ class CityClusterGenerator:
                     school_subclusters.append(Subcluster(school_agents,cluster, topology="scale_free"))
 
         cluster.subclusters = school_subclusters
+        print("School clusters generated")
         return cluster
