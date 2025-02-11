@@ -165,8 +165,12 @@ class DiseaseModel(ABC):
             return
 
         # 3️⃣ PROGRESIÓN: Evaluar cambio de gravedad
-        severity = agent.infection_status.get("severity", "mild")
-        recovery_days = self.severity_durations.get(severity, 10)  # Tiempo base de recuperación
+        if not agent.infection_status["severity"] == "asymptomatic":
+            severity = agent.infection_status.get("severity", "mild")
+            recovery_days = self.severity_durations.get(severity, 10)  # Tiempo base de recuperación
+
+        elif agent.infection_status["severity"] == "asymptomatic":
+            recovery_days = random.uniform(5, 10)  # Recuperación más rápida
 
         # 💡 Bonus de recuperación si está hospitalizado
         recovery_bonus = 1.3 if agent.is_hospitalized else 1.0  
