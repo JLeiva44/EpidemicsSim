@@ -27,10 +27,10 @@ class SimulationController:
         self.initial_infected = initial_infected
         self.agents = self._generate_agents()
         self.cluster_generator = CityClusterGenerator(demographics)
-        self.policies = self._configurate_policies()
+        self.policies = self._configurate_policies(policies_config)
         self.heathcare_system = HealthcareSystem(5000, 10000, self.policies, self.demographics["municipios"])
         
-    def _configurate_policies(self, policies):
+    def _configurate_policies(self, policies_config):
         """
         Configura las políticas de la simulación según el diccionario 'policies'.
         
@@ -38,24 +38,24 @@ class SimulationController:
         """
         policies = []
         # Configuración de la política de confinamiento (lockdown)
-        if "lockdown" in policies:
-            lockdown_config = policies["lockdown"]
+        if "lockdown" in policies_config:
+            lockdown_config = policies_config["lockdown"]
             policies.append(LockdownPolicy(restricted_clusters=lockdown_config.get("restricted_clusters", [])))
         
         # Configuración de la política de uso de mascarillas (mask)
-        if "mask" in policies:
-            mask_config = policies["mask"]
+        if "mask" in policies_config:
+            mask_config = policies_config["mask"]
             policies.append(MaskUsagePolicy(transmission_reduction_factor=mask_config.get("transmission_reduction_factor", 0)))
         
         # Configuración de la política de distanciamiento social (social_distancing)
-        if "social_distancing" in policies:
-            distancing_config = policies["social_distancing"]
+        if "social_distancing" in policies_config:
+            distancing_config = policies_config["social_distancing"]
             policies.append(SocialDistancingPolicy(reduction_factor=distancing_config.get("reduction_factor", 1)))
             
         
         # Configuración de la política de vacunación (vaccination)
-        if "vaccination" in policies:
-            vaccination_config = policies["vaccination"]
+        if "vaccination" in policies_config:
+            vaccination_config = policies_config["vaccination"]
             policies.append(VaccinationPolicy(vaccination_rate=vaccination_config.get("vaccination_rate", 0), vaccine_efficacy=vaccination_config.get("vaccine_efficacy", 0)))
            
         
