@@ -93,7 +93,7 @@ class SimulationController:
             cluster_generator=self.cluster_generator,
             disease_model=self.disease_model,
             policies=self.policies,
-            healthcare_system=self.healthcare_system,
+            healthcare_system=self.heathcare_system,
             initial_infected= self.initial_infected
         )
 
