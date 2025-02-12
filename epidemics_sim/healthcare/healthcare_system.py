@@ -1,5 +1,5 @@
 import random
-from epidemics_sim.healthcare.analyzer import SimulationAnalyzer
+from epidemics_sim.healthcare.deep2 import SimulationAnalyzer
 from epidemics_sim.policies.vaccination_policy import VaccinationPolicy
 from epidemics_sim.policies.lockdown_policy import LockdownPolicy
 from epidemics_sim.policies.mask_policy import MaskUsagePolicy

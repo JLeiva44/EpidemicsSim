@@ -10,10 +10,10 @@ class DiseaseModel(ABC):
         mean_incubation_period,
         asymptomatic_probability,
         base_mortality_rate,
+        immunity_duration,  # Nueva variable: define duración de la inmunidad
         recovery_rates,
         severity_durations,
         progresion_rates,
-        immunity_duration=0,  # Nueva variable: define duración de la inmunidad
     ):
         """
         Base class for diseases transmitted by contact.

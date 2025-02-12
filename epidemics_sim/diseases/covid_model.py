@@ -27,9 +27,10 @@ class CovidModel(DiseaseModel):
             incubation_period,
             asymptomatic_probability,
             base_mortality_rate,
+            immunity_duration,  # COVID-19: 90 días de inmunidad
             recovery_rates,
             severity_durations,
-            immunity_duration,  # COVID-19: 90 días de inmunidad
+            progression_rates
         )
 
     def determine_severity(self, agent): # TODO: ver si el agente esta vacunado
