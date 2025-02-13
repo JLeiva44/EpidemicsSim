@@ -59,7 +59,7 @@ class SimulationController:
             policies.append(VaccinationPolicy(vaccination_rate=vaccination_config.get("vaccination_rate", 0), vaccine_efficacy=vaccination_config.get("vaccine_efficacy", 0)))
            
         
-        print("Políticas configuradas:")
+        print("Políticas configuradas")
         return policies
     
     def _generate_agents(self):

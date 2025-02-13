@@ -2,6 +2,9 @@ import random
 from epidemics_sim.simulation.clusters import CityClusterGenerator
 from epidemics_sim.agents.base_agent import State
 from multiprocessing import Pool
+from epidemics_sim.simulation.logger import setup_logger
+
+logger = setup_logger()
 
 class DailySimulation:
     def __init__(self, agents, cluster_generator, disease_model, policies, healthcare_system, initial_infected):
@@ -49,7 +52,7 @@ class DailySimulation:
         """
         simulation_results = []
         week_counter = 0
-
+        last_infected = 0
         for day in range(days):
             if week_counter == 7 :
                 week_counter = 0
@@ -58,29 +61,53 @@ class DailySimulation:
 
             # 1️⃣ Simular interacciones y propagación
             daily_summary = self.simulate_day(day)
+
+            for a,b in daily_summary.items():
+                print(f"Interacciones en {a} : {len(b)}")
             
             simulation_results.append(daily_summary)
 
             # 2️⃣ Propagar enfermedad solo con los agentes activos
-            self.disease_model.propagate(daily_summary)
+            infected = self.disease_model.propagate(daily_summary, self.agents)
+            print(f"Agentes infectados despues de la propagacion: {len(infected)}")
 
+            count = 0
+            logger.info("Agentes de nwe ..................")
+            for agent in infected.keys():
+                if infected[agent].infection_status['state'] is State.INFECTED:
+                    logger.debug(infected[agent])
+                    count +=1
+
+           # print(f"Agentes infectados despues de la propagacion: {count}")
             
             # 2️⃣ Progresar la infección en los agentes
-            for agent in self.agents.values():
-                if agent.infection_status['state'] == State.INFECTED:
-                    self.disease_model.progress_infection(agent)
+            logger.info("Agentes infectados de Agents :")
+            infectados = 0
+            for agent in self.agents.keys():
+                if self.agents[agent].infection_status['state'] is State.INFECTED:
+                    logger.debug(self.agents[agent])
+                    infectados +=1
+                    self.disease_model.progress_infection(agent,self.agents)
+
+
+
+            
+            print(f"Día {day}: Susceptibles={sum(1 for a in self.agents.values() if a.infection_status['state'] == State.SUSCEPTIBLE)}, "
+            f"Infectados={sum(1 for a in self.agents.values() if a.infection_status['state'] == State.INFECTED)}, "
+            f"Recuperados={sum(1 for a in self.agents.values() if a.infection_status['state'] == State.RECOVERED)}, "
+            f"Muertos={sum(1 for a in self.agents.values() if a.infection_status['state'] == State.DECEASED)}")
 
             
 
             # 3️⃣ Ejecutar las operaciones del sistema de salud
-            self.healthcare_system.daily_operations(self.agents.values(), self.clusters,sum([len(interactions) for interactions in daily_summary.values()]), day)
+            #self.healthcare_system.daily_operations(self.agents.values(), self.clusters,sum([len(interactions) for interactions in daily_summary.values()]), day)
 
             
             
             # 4️⃣ Eliminar agentes muertos después de registrar estadísticas
-            deceased = [agent for agent in self.agents.values() if agent.infection_status["state"] == State.DECEASED]
-            if len(deceased) > 0:
-                self.agents = {agent_id: agent for agent_id, agent in self.agents.items() if agent.infection_status["state"] != State.DECEASED}
+            # deceased = [agent for agent in self.agents.values() if agent.infection_status["state"] == State.DECEASED]
+            # if len(deceased) > 0:
+            self.agents = {agent_id: agent for agent_id, agent in self.agents.items() if agent.infection_status["state"] is not State.DECEASED}
 
                 # pOR AHORA SOLO LOS IGNORA, ASI OPTIMIZO EL CODIGO
                 # for cluster in self.clusters.values(): # ver si se puede optimizar para que solamente los 
@@ -98,6 +125,13 @@ class DailySimulation:
 
         :return: A summary of interactions for the day.
         """
+
+        daily_interactions = {
+            "home":self._simulate_cluster_interactions(self.clusters["home"], "morning", self.agents),
+            "work":self._simulate_cluster_interactions(self.clusters["work"], "daytime", self.agents),
+            "school":self._simulate_cluster_interactions(self.clusters["school"], "daytime", self.agents),
+            "shopping":self._simulate_cluster_interactions(self.clusters["shopping"], "evening", self.agents),
+        }
         # TODO : Posible mejora (y pasar active_agents como parametro a los metodos)
         # active_agents = [
         # agent for agent in self.agents.values()
@@ -111,11 +145,11 @@ class DailySimulation:
         #         ("evening",),
         #     ])
         # daily_interactions = dict(zip(["morning", "daytime", "evening"], results))
-        daily_interactions = {
-        "morning": self._simulate_morning(),
-        "daytime": self._simulate_daytime(),
-        "evening": self._simulate_evening() if day % 7 == 0 else [],
-        }
+        # daily_interactions = {
+        # "morning": self._simulate_morning(),
+        # "daytime": self._simulate_daytime(),
+        # "evening": self._simulate_evening() if day % 7 == 0 else [],
+        # }
 
        # 1️⃣ Excluir agentes hospitalizados o aislados
         #Lo voy a dejar para ver si estan llegando los hospitalizados aqui ya que los quite en los clusters
@@ -182,7 +216,7 @@ class DailySimulation:
         """
         return self._simulate_cluster_interactions(self.clusters["home"], "night")
 
-    def _simulate_cluster_interactions(self, cluster, time_period):
+    def _simulate_cluster_interactions(self, cluster, time_period,agents):
         """
         Simulate interactions within a cluster and its subclusters for a specific time period.
 
@@ -190,7 +224,7 @@ class DailySimulation:
         :param time_period: Current time period.
         :return: List of interactions within the cluster and subclusters.
         """
-        return cluster.simulate_interactions(time_period)
+        return cluster.simulate_interactions(time_period,agents)
 
     # def _apply_policies(self):
     #     """

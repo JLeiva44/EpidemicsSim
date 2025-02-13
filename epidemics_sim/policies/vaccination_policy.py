@@ -19,7 +19,7 @@ class VaccinationPolicy(Policy):
         :param agents: Diccionario de agentes en la simulación.
         :param clusters: Diccionario de clusters en la simulación.
         """
-        unvaccinated_agents = [agent for agent in agents if not agent.infection_status["state"] != State.Infected and  agent.vaccinated and agent.agent_id not in self.vaccinated_agents]
+        unvaccinated_agents = [agent for agent in agents if not agent.infection_status["state"] is not State.Infected and  agent.vaccinated and agent.agent_id not in self.vaccinated_agents]
 
         if not unvaccinated_agents:
             print("✅ Todos los agentes elegibles han sido vacunados.")

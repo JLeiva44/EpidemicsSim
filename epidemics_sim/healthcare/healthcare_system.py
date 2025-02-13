@@ -29,7 +29,7 @@ class HealthcareSystem:
 
         # Calcular casos por municipio
         for agent in agents:
-            if agent.infection_status["state"] == State.INFECTED:
+            if agent.infection_status["state"] is State.INFECTED:
                 new_cases += 1
                 municipio = agent.municipio
                 if municipio == "PLAYA":
@@ -38,7 +38,7 @@ class HealthcareSystem:
                 if municipio not in self.municipality_data:
                     self.municipality_data[municipio] = 0
                 self.municipality_data[municipio] += 1
-            elif agent.infection_status["state"] == State.DECEASED:
+            elif agent.infection_status["state"] is State.DECEASED:
                 new_deaths += 1
         self.analyzer.record_daily_stats(new_cases, new_deaths, self.municipality_data)
         
@@ -50,21 +50,21 @@ class HealthcareSystem:
         if len(self.daily_deaths) > 10:
             self.daily_deaths.pop(0)
         
-        self.hospitalized = [a for a in self.hospitalized if a.infection_status["state"] not in [State.RECOVERED, State.DECEASED]]
-        self.isolated = [a for a in self.isolated if a.infection_status["state"] not in [State.RECOVERED, State.DECEASED]]
+        # self.hospitalized = [a for a in self.hospitalized if a.infection_status["state"] is not State.RECOVERED or a.infection_status["state"] is not State.DECEASED]
+        # self.isolated = [a for a in self.isolated if a.infection_status["state"] is not State.RECOVERED or a.infection_status["state"] is not State.DECEASED]
         
-        prioritized_cases = sorted(
-            [a for a in agents if a.infection_status["severity"] in ["mild", "moderate", "severe", "critical"] and not a.is_hospitalized and not a.is_isolated],
-            key=lambda x: ["critical", "severe", "moderate", "mild"].index(x.infection_status["severity"])
-        )
+        # prioritized_cases = sorted(
+        #     [a for a in agents if a.infection_status["severity"] in ["mild", "moderate", "severe", "critical"] and not a.is_hospitalized and not a.is_isolated],
+        #     key=lambda x: ["critical", "severe", "moderate", "mild"].index(x.infection_status["severity"])
+        # )
 
-        for agent in prioritized_cases:
-            if len(self.hospitalized) < self.hospital_capacity:
-                self.hospitalized.append(agent)
-                agent.is_hospitalized, agent.is_isolated = True, False
-            elif len(self.isolated) < self.isolation_capacity:
-                self.isolated.append(agent)
-                agent.is_isolated, agent.is_hospitalized = True, False
+        # for agent in prioritized_cases:
+        #     if len(self.hospitalized) < self.hospital_capacity:
+        #         self.hospitalized.append(agent)
+        #         agent.is_hospitalized, agent.is_isolated = True, False
+        #     elif len(self.isolated) < self.isolation_capacity:
+        #         self.isolated.append(agent)
+        #         agent.is_isolated, agent.is_hospitalized = True, False
 
     def evaluate_policies(self, agents, clusters, day):
         if self.days_since_last_evaluation < 7:
@@ -73,7 +73,7 @@ class HealthcareSystem:
 
         self.days_since_last_evaluation = 0
         total_population = len(agents)
-        total_infected = sum(1 for agent in agents if agent.infection_status["state"] == State.INFECTED)
+        total_infected = sum(1 for agent in agents if agent.infection_status["state"] is State.INFECTED)
         infection_rate = total_infected / total_population if total_population > 0 else 0
         hospital_occupancy = len(self.hospitalized) / self.hospital_capacity
         hospitalized = len(self.hospitalized)
@@ -84,9 +84,9 @@ class HealthcareSystem:
 
         print("\n📊 Evaluación de la situación epidemiológica (Día", day, ")")
         print("Tasa de infección actual: {:.2%}".format(infection_rate))
-        print(f"Total de hospitalizados: {hospitalized}/{self.hospital_capacity}")
-        print(f"Total de aislados: {isolated}/{self.isolation_capacity}")
-        print("Ocupación hospitalaria: {:.2%}".format(hospital_occupancy))
+        # print(f"Total de hospitalizados: {hospitalized}/{self.hospital_capacity}")
+        # print(f"Total de aislados: {isolated}/{self.isolation_capacity}")
+        # print("Ocupación hospitalaria: {:.2%}".format(hospital_occupancy))
         print("Promedio de casos diarios en los últimos 7 días: {:.2f}".format(avg_cases_last_10_days))
         print("Promedio de muertes diarias en los últimos 7 días: {:.2f}".format(avg_deaths_last_10_days))
         print("Políticas activas:", [p.__name__ for p, active in self.active_policies.items() if active])
@@ -137,8 +137,10 @@ class HealthcareSystem:
                 self.active_policies[policy_type] = False
                 print(f"🛑 {policy_type.__name__} eliminada.")
 
+    
     def daily_operations(self, agents, clusters, interactions, day):
         self.monitor_health_status(agents, interactions)
+
         # 📌 Verificar si la política de vacunación está activa y continuar vacunando progresivamente
         if self.active_policies.get(VaccinationPolicy, False):
             for policy in self.policies:
@@ -146,4 +148,5 @@ class HealthcareSystem:
                     total_vaccination = policy.enforce(agents, clusters)  # Continúa vacunando
                     if total_vaccination :
                         self.remove_policies(agents,clusters, VaccinationPolicy)
+                        
         self.evaluate_policies(agents, clusters, day)

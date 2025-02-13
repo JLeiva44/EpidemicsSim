@@ -21,8 +21,8 @@ class Subcluster:
         Genera un grafo basado en la topología especificada.
         """
         num_agents = len(self.agents)
-        if num_agents < 2:
-            return nx.Graph()
+        # if num_agents < 2:
+        #     return nx.Graph()
 
         if self.topology == "scale_free":
             m = max(1, min(2, num_agents - 1))
@@ -46,7 +46,7 @@ class Subcluster:
                 self.graph.remove_node(node)
                 break
 
-    def simulate_interactions(self):
+    def simulate_interactions(self, agents):
         """
         Simula interacciones dentro del subcluster basándose en la probabilidad de interacción.
         """
@@ -56,20 +56,20 @@ class Subcluster:
             agent2 = self.graph.nodes[edge[1]]['agent']
             
             # Evitar interacciones con agentes fallecidos
-            if self.cluster.cluster_type == "shopping":
-                if agent1.infection_status['state'] == State.DECEASED or agent1.is_hospitalized or agent1.is_isolated:
-                    self.update_shopping_agents(agent1)
-                elif agent2.infection_status['state'] == State.DECEASED or agent2.is_hospitalized or agent2.is_isolated:
-                    self.update_shopping_agents(agent2)
-                continue    
-            if agent1.infection_status["state"] == State.DECEASED or agent2.infection_status["state"] == State.DECEASED:
-                continue
+            # if self.cluster.cluster_type == "shopping":
+            #     if agents[agent1.agent_id].infection_status['state'] == State.DECEASED or agents[agent1.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated:
+            #         self.update_shopping_agents(agent1)
+            #     elif agents[agent2.agent_id].infection_status['state'] == State.DECEASED or agents[agent2.agent_id].is_hospitalized or agents[agent2.agent_id].is_isolated:
+            #         self.update_shopping_agents(agent2)
+            #     continue    
+            # if agents[agent1.agent_id].infection_status["state"] == State.DECEASED or agents[agent2.agent_id].infection_status["state"] == State.DECEASED:
+            #     continue
 
-            if agent1.is_hospitalized or agent2.is_hospitalized or agent1.is_isolated or agent2.is_isolated:
-                continue
+            # if agents[agent1.agent_id].is_hospitalized or agents[agent2.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated or agents[agent2.agent_id].is_isolated:
+            #     continue
 
             if random.random() < self.cluster.interaction_probability:
-                interactions.append((agent1, agent2))
+                interactions.append((agent1.agent_id, agent2.agent_id))
         
         return interactions
     
@@ -138,14 +138,14 @@ class ClusterWithSubclusters:
     def remove_lockdown(self):
         self.lockdown_is_active = False
 
-    def simulate_interactions(self, time_period):
+    def simulate_interactions(self, time_period, agents):
         """
         Simula interacciones en todos los subclusters durante un período activo.
         """
         interactions = []
         if not self.lockdown_is_active and time_period in self.active_periods:
             for subcluster in self.subclusters:
-                interactions.extend(subcluster.simulate_interactions())
+                interactions.extend(subcluster.simulate_interactions(agents))
         return interactions
     
     def adjust_interaction_probability(self, new_probability):
@@ -171,6 +171,7 @@ class ClusterWithSubclusters:
 
 class CityClusterGenerator:
     def __init__(self, municipal_data):
+        self.data = municipal_data
         self.total_companies = municipal_data["total_empresas"]
         self.total_stores = municipal_data["total_tiendas"]
         self.municipal_data = municipal_data["municipios"]
@@ -183,10 +184,10 @@ class CityClusterGenerator:
             "shopping": self.generate_shopping_clusters(agents),
         }
     
-    def generate_home_clusters(self, agents): # TODO mejorar la asinacion de hogares para no tener que apsar de nuevo
+    def generate_home_clusters(self, agents):
         home_subclusters = []
-        household_id_counter = 0  # 🔹 Contador único para asignar household_id
-        cluster = ClusterWithSubclusters(home_subclusters, "home", ["morning", "night"],interaction_probability=random.uniform(0.8, 1.0))
+        household_id_counter = 0  # Contador único para asignar household_id
+        cluster = ClusterWithSubclusters(home_subclusters, "home", ["morning", "night"], interaction_probability=random.uniform(0.8, 1.0))
 
         for municipio, data in self.municipal_data.items():
             municipio_agents = [agent for agent in agents if agent.municipio == municipio]
@@ -208,47 +209,127 @@ class CityClusterGenerator:
                 household_agents = unassigned_agents[:size]
                 unassigned_agents = unassigned_agents[size:]
 
-                # Asegurar que al menos haya un adulto en el hogar
+                # Asegurar que haya al menos un adulto y un menor si es posible
                 if not any(agent.age >= 18 for agent in household_agents):
                     adults = [a for a in unassigned_agents if a.age >= 18]
                     if adults:
-                        household_agents[-1] = adults.pop(0)
+                        household_agents.append(adults.pop(0))
+                        unassigned_agents.remove(household_agents[-1])
+                
+                if not any(agent.age < 18 for agent in household_agents):
+                    children = [a for a in unassigned_agents if a.age < 18]
+                    if children:
+                        household_agents.append(children.pop(0))
                         unassigned_agents.remove(household_agents[-1])
 
-                # 🔹 Asignar un household_id único a todos los agentes en este hogar
+                # Asignar un household_id único a todos los agentes en este hogar
                 for agent in household_agents:
                     agent.household_id = household_id_counter
                     agent.household = household_agents
                 household_id_counter += 1  # Incrementar para el siguiente hogar
 
-                home_subclusters.append(Subcluster(household_agents,cluster, topology="complete"))
+                home_subclusters.append(Subcluster(household_agents, cluster, topology="complete"))
 
         cluster.subclusters = home_subclusters
-        print("Home clusters generated")
+        print("Home clusters generated with a more realistic composition")
         return cluster
+
+    # def generate_home_clusters(self, agents): # TODO mejorar la asinacion de hogares para no tener que apsar de nuevo
+    #     home_subclusters = []
+    #     household_id_counter = 0  # 🔹 Contador único para asignar household_id
+    #     cluster = ClusterWithSubclusters(home_subclusters, "home", ["morning", "night"],interaction_probability=random.uniform(0.8, 1.0))
+
+    #     for municipio, data in self.municipal_data.items():
+    #         municipio_agents = [agent for agent in agents if agent.municipio == municipio]
+    #         total_population = len(municipio_agents)
+    #         avg_household_size = float(data["Promedio de Personas por Unidad de Alojamiento"])
+
+    #         # Determinar la cantidad de hogares a partir del promedio
+    #         estimated_households = max(1, round(total_population / avg_household_size))
+
+    #         random.shuffle(municipio_agents)
+    #         unassigned_agents = municipio_agents.copy()
+
+    #         for _ in range(estimated_households):
+    #             if not unassigned_agents:
+    #                 break
+    #             size = max(1, round(random.gauss(avg_household_size, 1)))  # Distribución normal alrededor del promedio
+    #             size = min(size, len(unassigned_agents))  
+
+    #             household_agents = unassigned_agents[:size]
+    #             unassigned_agents = unassigned_agents[size:]
+
+    #             # Asegurar que al menos haya un adulto en el hogar
+    #             if not any(agent.age >= 18 for agent in household_agents):
+    #                 adults = [a for a in unassigned_agents if a.age >= 18]
+    #                 if adults:
+    #                     household_agents[-1] = adults.pop(0)
+    #                     unassigned_agents.remove(household_agents[-1])
+
+    #             # 🔹 Asignar un household_id único a todos los agentes en este hogar
+    #             for agent in household_agents:
+    #                 agent.household_id = household_id_counter
+    #                 agent.household = household_agents
+    #             household_id_counter += 1  # Incrementar para el siguiente hogar
+
+    #             home_subclusters.append(Subcluster(household_agents,cluster, topology="complete"))
+
+    #     cluster.subclusters = home_subclusters
+    #     print("Home clusters generated")
+    #     return cluster
 
 
     def generate_work_clusters(self, agents):
         work_subclusters = []
-        cluster = ClusterWithSubclusters(work_subclusters, "work", ["daytime"],interaction_probability=random.uniform(0.3,0.6))
+        cluster = ClusterWithSubclusters(work_subclusters, "work", ["daytime"], interaction_probability=random.uniform(0.3, 0.6))
         workers = [agent for agent in agents if agent.occupation == "worker"]
         random.shuffle(workers)
-
-        min_size, max_size = 5, 50  # Tamaño mínimo y máximo de cada empresa
-        company_sizes = [random.randint(min_size, max_size) for _ in range(self.total_companies)]
+        
+        total_workers = len(workers)
+        if total_workers == 0:
+            print("No hay trabajadores disponibles para asignar a empresas.")
+            return cluster
+        
+        # Definir la cantidad de empresas y el tamaño dinámico basado en el número de trabajadores
+        num_companies = max(1, int(total_workers / 20))  # Ajustar el número de empresas en función de la población trabajadora
+        min_size, max_size = max(3, total_workers // (num_companies * 2)), max(10, total_workers // num_companies)  
+        
+        company_sizes = [random.randint(min_size, max_size) for _ in range(num_companies)]
         unassigned_agents = workers.copy()
-
+        
         for size in company_sizes:
             if not unassigned_agents:
                 break
             size = min(size, len(unassigned_agents))
             work_agents = unassigned_agents[:size]
             unassigned_agents = unassigned_agents[size:]
-            work_subclusters.append(Subcluster(work_agents,cluster, topology="scale_free"))
+            work_subclusters.append(Subcluster(work_agents, cluster, topology="scale_free"))
         
         cluster.subclusters = work_subclusters
-        print("Work clusters generated")
+        print(f"Se generaron: {len(cluster.subclusters)} trabajos con tamaños dinámicos")
         return cluster
+
+    # def generate_work_clusters(self, agents):
+    #     work_subclusters = []
+    #     cluster = ClusterWithSubclusters(work_subclusters, "work", ["daytime"],interaction_probability=random.uniform(0.3,0.6))
+    #     workers = [agent for agent in agents if agent.occupation == "worker"]
+    #     random.shuffle(workers)
+
+    #     min_size, max_size = 5, 50  # Tamaño mínimo y máximo de cada empresa
+    #     company_sizes = [random.randint(min_size, max_size) for _ in range(self.total_companies)]
+    #     unassigned_agents = workers.copy()
+
+    #     for size in company_sizes:
+    #         if not unassigned_agents:
+    #             break
+    #         size = min(size, len(unassigned_agents))
+    #         work_agents = unassigned_agents[:size]
+    #         unassigned_agents = unassigned_agents[size:]
+    #         work_subclusters.append(Subcluster(work_agents,cluster, topology="scale_free"))
+        
+    #     cluster.subclusters = work_subclusters
+    #     print(f"Se generaron : {len(cluster.subclusters)} trabajos")
+    #     return cluster
     
     
     def generate_shopping_clusters(self, agents):
@@ -283,44 +364,94 @@ class CityClusterGenerator:
             shopping_subclusters.append(Subcluster(shopping_agents,cluster, topology="scale_free"))
 
         cluster.subclusters = shopping_subclusters
-        print("Shopping clusters generated")
+        print(f"Se generaron : {len(cluster.subclusters)} tiendas")
         return cluster
 
 
     def generate_school_clusters(self, agents):
         school_subclusters = []
-        cluster = ClusterWithSubclusters(school_subclusters, "school", ["daytime"], interaction_probability= random.uniform(0.5,0.9))
+        cluster = ClusterWithSubclusters(school_subclusters, "school", ["daytime"], interaction_probability=random.uniform(0.5, 0.9))
+        
+        # Mapeo de tipos de escuelas a rangos de edad
         school_age_mapping = {
-            "Circulos infantiles": (0, 5),
+            "Círculos infantiles": (0, 5),
             "Primaria": (6, 11),
-            "Secundaria basica": (12, 14),
-            "Preuniversitario": (15, 17),
+            "Media": (12, 14),
+            "Secundaria": (15, 17),
+            "Preuniversitario": (18, 19),
             "Tecnica y profesional": (18, 22)
         }
 
-        for municipio, data in self.municipal_data.items():
-            if "Escuelas" not in data:
-                continue
+        # Obtener el número total de escuelas por tipo desde el diccionario general
+        total_schools = self.data.get("Escuelas_Total", {})
+        
+        # Filtrar estudiantes por rango de edad y asignarlos a escuelas
+        for school_type, num_schools in total_schools.items():
+            if school_type not in school_age_mapping:
+                continue  # Saltar tipos de escuelas no definidos en el mapeo
+
+            age_range = school_age_mapping[school_type]
             
-            for school_type, num_schools in data["Escuelas"].items():
-                if school_type not in school_age_mapping:
-                    continue
-                age_range = school_age_mapping[school_type]
+            # Filtrar estudiantes en el rango de edad correspondiente
+            students = [
+                agent for agent in agents 
+                if agent.occupation == "student" 
+                and age_range[0] <= agent.age <= age_range[1]
+            ]
+            random.shuffle(students)
 
-                students = [agent for agent in agents if agent.municipio == municipio and agent.occupation == "student" and age_range[0] <= agent.age <= age_range[1]]
-                random.shuffle(students)
+            # Crear escuelas del tipo actual
+            school_sizes = [random.randint(20, 50) for _ in range(int(num_schools))]
+            unassigned_students = students.copy()
 
-                school_sizes = [random.randint(20, 50) for _ in range(int(num_schools))]
-                unassigned_students = students.copy()
+            for size in school_sizes:
+                if not unassigned_students:
+                    break  # No hay más estudiantes para asignar
 
-                for size in school_sizes:
-                    if not unassigned_students:
-                        break
-                    size = min(size, len(unassigned_students))
-                    school_agents = unassigned_students[:size]
-                    unassigned_students = unassigned_students[size:]
-                    school_subclusters.append(Subcluster(school_agents,cluster, topology="scale_free"))
+                size = min(size, len(unassigned_students))  # Asegurar que no exceda el número de estudiantes disponibles
+                school_agents = unassigned_students[:size]
+                unassigned_students = unassigned_students[size:]
+
+                # Crear un subcluster para la escuela
+                school_subclusters.append(Subcluster(school_agents, cluster, topology="scale_free"))
 
         cluster.subclusters = school_subclusters
-        print("School clusters generated")
+        print(f"Se generaron : {len(cluster.subclusters)} escuelas")
         return cluster
+    # def generate_school_clusters(self, agents):
+    #     school_subclusters = []
+    #     cluster = ClusterWithSubclusters(school_subclusters, "school", ["daytime"], interaction_probability= random.uniform(0.5,0.9))
+    #     school_age_mapping = {
+    #         "Circulos infantiles": (0, 5),
+    #         "Primaria": (6, 11),
+    #         "Secundaria basica": (12, 14),
+    #         "Preuniversitario": (15, 17),
+    #         "Tecnica y profesional": (18, 22)
+    #     }
+
+    #     for municipio, data in self.municipal_data.items():
+    #         if "Escuelas" not in data:
+    #             continue
+            
+    #         for school_type, num_schools in data["Escuelas"].items():
+    #             if school_type not in school_age_mapping:
+    #                 continue
+    #             age_range = school_age_mapping[school_type]
+
+    #             students = [agent for agent in agents if agent.municipio == municipio and agent.occupation == "student" and age_range[0] <= agent.age <= age_range[1]]
+    #             random.shuffle(students)
+
+    #             school_sizes = [random.randint(20, 50) for _ in range(int(num_schools))]
+    #             unassigned_students = students.copy()
+
+    #             for size in school_sizes:
+    #                 if not unassigned_students:
+    #                     break
+    #                 size = min(size, len(unassigned_students))
+    #                 school_agents = unassigned_students[:size]
+    #                 unassigned_students = unassigned_students[size:]
+    #                 school_subclusters.append(Subcluster(school_agents,cluster, topology="scale_free"))
+
+    #     cluster.subclusters = school_subclusters
+    #     print("School clusters generated")
+    #     return cluster
