@@ -1,6 +1,7 @@
 from epidemics_sim.agents.base_agent import BaseAgent
 from epidemics_sim.agents.base_agent import State
 import random
+
 class HumanAgent(BaseAgent):
     def __init__(
         self, agent_id, age, gender, occupation, household_id, municipio, disease_model,
@@ -44,6 +45,7 @@ class HumanAgent(BaseAgent):
         self.mortality_rate = self._calculate_base_mortality_rate()
         self.disease_model = disease_model
         self.incubation_period = 0
+
         self.infection_status ={
                 "disease": "",
                 "state": State.SUSCEPTIBLE,
@@ -52,6 +54,7 @@ class HumanAgent(BaseAgent):
                 "days_infected": 0,
                 "asymptomatic": None,
                 "immunity_days": 0,
+                "diagnosis_delay" : 0
             }
 
 

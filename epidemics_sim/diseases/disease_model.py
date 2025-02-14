@@ -50,13 +50,15 @@ class DiseaseModel(ABC):
         for agent in agents:
             agent.transition(State.INFECTED, reason=f"Initial {self.name} infection")
             agent.days_infected = 0
+            asymptomatic = random.random() < self.asymptomatic_probability
             agent.infection_status = {
                 "disease": self.name,
                 "state": State.INFECTED,
                 "severity": None,
-                "contagious": False,  
+                "contagious": True,  
                 "days_infected": 0,
-                "asymptomatic": random.random() < self.asymptomatic_probability,
+                "asymptomatic": asymptomatic,
+                "diagnosis_delay": None if asymptomatic else 0
             }
 
     def propagate(self, daily_interactions, agents):
@@ -88,6 +90,9 @@ class DiseaseModel(ABC):
                         agents[id2].infection_status["days_infected"] = 0
                         agents[id2].infection_status["asymptomatic"] = random.random() < self.asymptomatic_probability
                         agents[id2].infection_status["immunity_days"] = self.immunity_duration
+                        
+                        agents[id2].infection_status["diagnosis_delay"] = None if agents[id2].infection_status["asymptomatic"] else random.randint(1,4)
+                        # DE uno a tres dias
                         new[count_evaluation] = agents[id2]
                         #logger.debug(f"Infestado el agente {id2}")
                 
@@ -103,6 +108,8 @@ class DiseaseModel(ABC):
                         agents[id1].infection_status["days_infected"] = 0
                         agents[id1].infection_status["asymptomatic"] = random.random() < self.asymptomatic_probability
                         agents[id1].infection_status["immunity_days"] = self.immunity_duration
+                        
+                        agents[id1].infection_status["diagnosis_delay"] = None if agents[id1].infection_status["asymptomatic"] else random.randint(1,4)
                         new[count_evaluation] = agents[id1]
                         #logger.debug(f"Infestado el agente {id1}")
                 
