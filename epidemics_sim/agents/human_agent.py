@@ -33,6 +33,7 @@ class HumanAgent(BaseAgent):
         #self.infection_status = infection_status
         self.days_infected = 0  # Days since infection (reset upon recovery)
         self.vaccinated = False
+        self.initial = False
         self.vaccine_effectiveness = None
         self.mask ={
             "usage":False,
@@ -75,13 +76,13 @@ class HumanAgent(BaseAgent):
         """
         biological_age = self.age + 5 * len(self.comorbidities)
         if biological_age <= 30:
-            return 0.0001
+            return 0.00001  # 0.001%
         elif biological_age <= 50:
-            return 0.001
+            return 0.0001   # 0.01%
         elif biological_age <= 70:
-            return 0.01
+            return 0.001    # 0.1%
         else:
-            return 0.05
+            return 0.01 # 1%
 
     
 
