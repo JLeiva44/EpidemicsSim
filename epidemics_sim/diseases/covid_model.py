@@ -52,4 +52,9 @@ class CovidModel(DiseaseModel):
         else:  # Riesgo muy alto
             probabilities = [0.2, 0.3, 0.3, 0.2]  # Mayor probabilidad de estado crítico
 
+        if agent.is_vaccinated:
+            probabilities[2] *= agent.vaccine_effectiveness  # Reducir probabilidad de síntomas moderados
+            probabilities[3] *= agent.vaccine_effectiveness  # Reducir probabilidad de síntomas graves
+            probabilities[4] *= agent.vaccine_effectiveness  # Reducir probabilidad de síntomas críticos    
+
         return random.choices(["mild", "moderate", "severe", "critical"], probabilities)[0]
