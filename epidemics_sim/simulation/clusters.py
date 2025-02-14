@@ -3,26 +3,16 @@ import networkx as nx
 from epidemics_sim.agents.base_agent import State
 
 class Subcluster:
-    def __init__(self, agents,cluster, topology="scale_free"):
-        """
-        Inicializa un subcluster con un grafo estático y probabilidad de interacción ajustable.
-        
-        :param agents: Lista de agentes en el subcluster.
-        :param topology: Topología del grafo ("scale_free" o "complete").
-        :param interaction_probability: Probabilidad de que una conexión en el grafo genere una interacción.
-        """
+    def __init__(self, agents, cluster, topology="scale_free"):
         self.agents = agents
         self.topology = topology
         self.cluster = cluster
-        self.graph = self.generate_graph()  # Se genera una vez y no se vuelve a calcular en cada paso
+        self.graph = self.generate_graph()
 
     def generate_graph(self):
-        """
-        Genera un grafo basado en la topología especificada.
-        """
         num_agents = len(self.agents)
-        # if num_agents < 2:
-        #     return nx.Graph()
+        if num_agents < 2:
+            return nx.Graph()
 
         if self.topology == "scale_free":
             m = max(1, min(2, num_agents - 1))
@@ -34,90 +24,192 @@ class Subcluster:
 
         for i, agent in enumerate(self.agents):
             graph.nodes[i]["agent"] = agent
-
+        
         return graph
 
     def remove_agent(self, agent):
-        """
-        Elimina un agente del grafo cuando fallece para evitar futuras interacciones.
-        """
         for node in list(self.graph.nodes):
             if self.graph.nodes[node]["agent"] == agent:
                 self.graph.remove_node(node)
+                self.agents.remove(agent)
                 break
 
     def simulate_interactions(self, agents):
-        """
-        Simula interacciones dentro del subcluster basándose en la probabilidad de interacción.
-        """
         interactions = []
+        to_update = []  # Lista para evitar múltiples regeneraciones del grafo
+
         for edge in list(self.graph.edges):
             agent1 = self.graph.nodes[edge[0]]['agent']
             agent2 = self.graph.nodes[edge[1]]['agent']
             
-            # Evitar interacciones con agentes fallecidos
-            # if self.cluster.cluster_type == "shopping":
-            #     if agents[agent1.agent_id].infection_status['state'] == State.DECEASED or agents[agent1.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated:
-            #         self.update_shopping_agents(agent1)
-            #     elif agents[agent2.agent_id].infection_status['state'] == State.DECEASED or agents[agent2.agent_id].is_hospitalized or agents[agent2.agent_id].is_isolated:
-            #         self.update_shopping_agents(agent2)
-            #     continue    
-            # if agents[agent1.agent_id].infection_status["state"] == State.DECEASED or agents[agent2.agent_id].infection_status["state"] == State.DECEASED:
-            #     continue
+            if self.cluster.cluster_type == "shopping":
+                if agents[agent1.agent_id].infection_status['state'] == State.DECEASED or agents[agent1.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated:
+                    to_update.append(agent1)
+                    continue
+                elif agents[agent2.agent_id].infection_status['state'] == State.DECEASED or agents[agent2.agent_id].is_hospitalized or agents[agent2.agent_id].is_isolated:
+                    to_update.append(agent2)
+                    continue    
+            if agents[agent1.agent_id].infection_status["state"] == State.DECEASED or agents[agent2.agent_id].infection_status["state"] == State.DECEASED:
+                continue
 
-            # if agents[agent1.agent_id].is_hospitalized or agents[agent2.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated or agents[agent2.agent_id].is_isolated:
-            #     continue
+            if agents[agent1.agent_id].is_hospitalized or agents[agent2.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated or agents[agent2.agent_id].is_isolated:
+                continue
 
             if random.random() < self.cluster.interaction_probability:
                 interactions.append((agent1.agent_id, agent2.agent_id))
         
+        for agent in to_update:
+            self.update_shopping_agents(agent)
+        
         return interactions
     
-    def adjust_interaction_probability(self, new_probability):
-        """
-        Permite ajustar la probabilidad de interacción sin modificar la estructura del grafo.
-        """
-        self.interaction_probability = new_probability
-
     def update_shopping_agents(self, agent):
-        """
-        Actualiza la lista de compradores si un agente fallece, está hospitalizado o aislado.
-        """
-        household_id = agent.household_id
-        household_members = [member for member in agent.hosehold if member.agent_id != agent.agent_id]
+        household_members = [member for member in agent.household if member.agent_id != agent.agent_id]
         best_candidate = None
-        best_age = -1  # Almacena la mejor edad encontrada
+        best_age = -1
 
-        # Buscar el mejor representante en una sola iteración
         for member in household_members:
             if member.infection_status["state"] == State.DECEASED or member.is_hospitalized or member.is_isolated:
-                continue  # Saltar agentes no disponibles
-
+                continue
             if member.age >= 18:
-                best_candidate = member  # Adulto disponible, mejor opción
-                break  # No es necesario seguir buscando
-
-            if member.age > best_age:  # Guardar el mejor candidato si no es adulto
+                best_candidate = member
+                break
+            if member.age > best_age:
                 best_candidate = member
                 best_age = member.age
 
-        # Remover el agente del grafo
-        for node in list(self.graph.nodes):
-            if self.graph.nodes[node]["agent"] == agent:
-                self.graph.remove_node(node)
-                break
+        self.remove_agent(agent)
 
-        # Si se encontró un nuevo representante, actualizar el cluster
         if best_candidate and best_age >= 12:
-            self.agents.append(best_candidate)  # Agregar al nuevo representante
-            self.graph = self.generate_graph()  # Regenerar el grafo con el nuevo agente
-            # new_node = len(self.graph.nodes)  # Nuevo índice de nodo en el grafo
-            # self.graph.add_node(new_node, agent=best_candidate)
+            self.agents.append(best_candidate)
+            self.graph.add_node(len(self.graph.nodes), agent=best_candidate)
 
-            # Conectar con vecinos existentes en la red de compras
-            # for neighbor in self.graph.nodes:
-            #     if random.random() < 0.5:  # Probabilidad arbitraria de reconectar
-            #         self.graph.add_edge(new_node, neighbor)
+            for neighbor in self.graph.nodes:
+                if random.random() < 0.5:
+                    self.graph.add_edge(len(self.graph.nodes) - 1, neighbor)
+        else:
+            print(f"Advertencia: El hogar {agent.household_id} se ha quedado sin representante para comprar.")
+
+# class Subcluster:
+#     def __init__(self, agents,cluster, topology="scale_free"):
+#         """
+#         Inicializa un subcluster con un grafo estático y probabilidad de interacción ajustable.
+        
+#         :param agents: Lista de agentes en el subcluster.
+#         :param topology: Topología del grafo ("scale_free" o "complete").
+#         :param interaction_probability: Probabilidad de que una conexión en el grafo genere una interacción.
+#         """
+#         self.agents = agents
+#         self.topology = topology
+#         self.cluster = cluster
+#         self.graph = self.generate_graph()  # Se genera una vez y no se vuelve a calcular en cada paso
+
+#     def generate_graph(self):
+#         """
+#         Genera un grafo basado en la topología especificada.
+#         """
+#         num_agents = len(self.agents)
+#         # if num_agents < 2:
+#         #     return nx.Graph()
+
+#         if self.topology == "scale_free":
+#             m = max(1, min(2, num_agents - 1))
+#             graph = nx.barabasi_albert_graph(num_agents, m)
+#         elif self.topology == "complete":
+#             graph = nx.complete_graph(num_agents)
+#         else:
+#             raise ValueError(f"Unknown topology: {self.topology}")
+
+#         for i, agent in enumerate(self.agents):
+#             graph.nodes[i]["agent"] = agent
+
+#         return graph
+
+#     def remove_agent(self, agent):
+#         """
+#         Elimina un agente del grafo cuando fallece para evitar futuras interacciones.
+#         """
+#         for node in list(self.graph.nodes):
+#             if self.graph.nodes[node]["agent"] == agent:
+#                 self.graph.remove_node(node)
+#                 break
+
+#     def simulate_interactions(self, agents):
+#         """
+#         Simula interacciones dentro del subcluster basándose en la probabilidad de interacción.
+#         """
+#         interactions = []
+#         for edge in list(self.graph.edges):
+#             agent1 = self.graph.nodes[edge[0]]['agent']
+#             agent2 = self.graph.nodes[edge[1]]['agent']
+            
+#             #Evitar interacciones con agentes fallecidos
+#             if self.cluster.cluster_type == "shopping":
+#                 if agents[agent1.agent_id].infection_status['state'] == State.DECEASED or agents[agent1.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated:
+#                     self.update_shopping_agents(agent1)
+#                     continue
+#                 elif agents[agent2.agent_id].infection_status['state'] == State.DECEASED or agents[agent2.agent_id].is_hospitalized or agents[agent2.agent_id].is_isolated:
+#                     self.update_shopping_agents(agent2)
+#                     continue    
+#             if agents[agent1.agent_id].infection_status["state"] == State.DECEASED or agents[agent2.agent_id].infection_status["state"] == State.DECEASED:
+#                 continue
+
+#             if agents[agent1.agent_id].is_hospitalized or agents[agent2.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated or agents[agent2.agent_id].is_isolated:
+#                 continue
+
+#             if random.random() < self.cluster.interaction_probability:
+#                 interactions.append((agent1.agent_id, agent2.agent_id))
+        
+#         return interactions
+    
+#     def adjust_interaction_probability(self, new_probability):
+#         """
+#         Permite ajustar la probabilidad de interacción sin modificar la estructura del grafo.
+#         """
+#         self.interaction_probability = new_probability
+
+#     def update_shopping_agents(self, agent):
+#         """
+#         Actualiza la lista de compradores si un agente fallece, está hospitalizado o aislado.
+#         """
+#         household_id = agent.household_id
+#         household_members = [member for member in agent.household if member.agent_id != agent.agent_id]
+#         best_candidate = None
+#         best_age = -1  # Almacena la mejor edad encontrada
+
+#         # Buscar el mejor representante en una sola iteración
+#         for member in household_members:
+#             if member.infection_status["state"] == State.DECEASED or member.is_hospitalized or member.is_isolated:
+#                 continue  # Saltar agentes no disponibles
+
+#             if member.age >= 18:
+#                 best_candidate = member  # Adulto disponible, mejor opción
+#                 break  # No es necesario seguir buscando
+
+#             if member.age > best_age:  # Guardar el mejor candidato si no es adulto
+#                 best_candidate = member
+#                 best_age = member.age
+
+#         # Remover el agente del grafo
+#         for node in list(self.graph.nodes):
+#             if self.graph.nodes[node]["agent"] == agent:
+#                 self.graph.remove_node(node)
+#                 self.agents.remove(agent)
+#                 break
+
+#         # Si se encontró un nuevo representante, actualizar el cluster
+#         if best_candidate and best_age >= 12:
+#             self.agents.append(best_candidate)  # Agregar al nuevo representante
+
+
+#         self.graph = self.generate_graph()  # Regenerar el grafo con el nuevo agente
+#             # new_node = len(self.graph.nodes)  # Nuevo índice de nodo en el grafo
+#             # self.graph.add_node(new_node, agent=best_candidate)
+
+#             # Conectar con vecinos existentes en la red de compras
+#             # for neighbor in self.graph.nodes:
+#             #     if random.random() < 0.5:  # Probabilidad arbitraria de reconectar
+#             #         self.graph.add_edge(new_node, neighbor)
 
 
 
@@ -170,11 +262,11 @@ class ClusterWithSubclusters:
                 subcluster.remove_agent(agent)
 
 class CityClusterGenerator:
-    def __init__(self, municipal_data):
-        self.data = municipal_data
-        self.total_companies = municipal_data["total_empresas"]
-        self.total_stores = municipal_data["total_tiendas"]
-        self.municipal_data = municipal_data["municipios"]
+    def __init__(self, city_data):
+        self.data = city_data
+        self.total_companies = city_data["total_empresas"]
+        self.total_stores = city_data["total_tiendas"]
+        self.municipal_data = city_data["municipios"]
     
     def generate_clusters(self, agents):
         return {
@@ -278,96 +370,264 @@ class CityClusterGenerator:
     #     print("Home clusters generated")
     #     return cluster
 
-
     def generate_work_clusters(self, agents):
         work_subclusters = []
         cluster = ClusterWithSubclusters(work_subclusters, "work", ["daytime"], interaction_probability=random.uniform(0.3, 0.6))
+        
+        # Filtramos los trabajadores
         workers = [agent for agent in agents if agent.occupation == "worker"]
-        random.shuffle(workers)
+        random.shuffle(workers)  # Aleatorizamos el orden de los trabajadores para evitar sesgos
         
         total_workers = len(workers)
         if total_workers == 0:
             print("No hay trabajadores disponibles para asignar a empresas.")
             return cluster
         
-        # Definir la cantidad de empresas y el tamaño dinámico basado en el número de trabajadores
-        num_companies = max(1, int(total_workers / 20))  # Ajustar el número de empresas en función de la población trabajadora
-        min_size, max_size = max(3, total_workers // (num_companies * 2)), max(10, total_workers // num_companies)  
+        # Distribuir los trabajadores por municipio
+        municipal_worker_distribution = {municipio: [] for municipio in self.municipal_data}
         
-        company_sizes = [random.randint(min_size, max_size) for _ in range(num_companies)]
-        unassigned_agents = workers.copy()
+        # Asignar trabajadores a los municipios en función de su campo 'municipio'
+        for worker in workers:
+            municipio = worker.municipio
+            if municipio in municipal_worker_distribution:
+                municipal_worker_distribution[municipio].append(worker)
         
-        for size in company_sizes:
-            if not unassigned_agents:
-                break
-            size = min(size, len(unassigned_agents))
-            work_agents = unassigned_agents[:size]
-            unassigned_agents = unassigned_agents[size:]
-            work_subclusters.append(Subcluster(work_agents, cluster, topology="scale_free"))
-        
+        # Generar las empresas por municipio según el dato en "empresas"
+        for municipio, worker_list in municipal_worker_distribution.items():
+            # Obtener la cantidad de empresas en este municipio
+            num_companies = self.municipal_data[municipio].get("empresas", 0)
+            if num_companies == 0:
+                continue  # Si no hay empresas en el municipio, no asignamos trabajadores
+            
+            # Calcular el número promedio de trabajadores por empresa en este municipio
+            total_workers_in_municipio = len(worker_list)
+            avg_size = total_workers_in_municipio // num_companies
+            remaining_workers = total_workers_in_municipio % num_companies
+
+            # Inicializar el tamaño de las empresas para este municipio
+            company_sizes = [avg_size for _ in range(num_companies)]
+
+            # Distribuir los trabajadores restantes de manera uniforme entre las empresas
+            for i in range(remaining_workers):
+                company_sizes[i % num_companies] += 1
+            
+            # Asignar los trabajadores a las empresas del municipio
+            unassigned_workers = worker_list.copy()
+            
+            for size in company_sizes:
+                if not unassigned_workers:
+                    break
+                size = min(size, len(unassigned_workers))  # No asignar más trabajadores de los que hay disponibles
+                company_workers = unassigned_workers[:size]
+                unassigned_workers = unassigned_workers[size:]
+
+                # Crear un subcluster para la empresa con los trabajadores asignados
+                work_subclusters.append(Subcluster(company_workers, cluster, topology="scale_free"))
+            
         cluster.subclusters = work_subclusters
-        print(f"Se generaron: {len(cluster.subclusters)} trabajos con tamaños dinámicos")
+        print(f"Se generaron: {len(cluster.subclusters)} empresas")
         return cluster
 
     # def generate_work_clusters(self, agents):
     #     work_subclusters = []
-    #     cluster = ClusterWithSubclusters(work_subclusters, "work", ["daytime"],interaction_probability=random.uniform(0.3,0.6))
+    #     cluster = ClusterWithSubclusters(work_subclusters, "work", ["daytime"], interaction_probability=random.uniform(0.3, 0.6))
+        
     #     workers = [agent for agent in agents if agent.occupation == "worker"]
-    #     random.shuffle(workers)
+    #     random.shuffle(workers)  # Aleatorizar el orden de los trabajadores para evitar sesgos
+        
+    #     total_workers = len(workers)
+    #     if total_workers == 0:
+    #         print("No hay trabajadores disponibles para asignar a empresas.")
+    #         return cluster
+        
+    #     # Usar self.total_companies como el número de empresas
+    #     num_companies = self.total_companies
+        
+    #     # Si hay más empresas que trabajadores, asignamos al menos un trabajador a cada empresa
+    #     if num_companies > total_workers:
+    #         num_companies = total_workers  # Aseguramos que no se asignen más empresas que trabajadores
 
-    #     min_size, max_size = 5, 50  # Tamaño mínimo y máximo de cada empresa
-    #     company_sizes = [random.randint(min_size, max_size) for _ in range(self.total_companies)]
+    #     # Distribuir los trabajadores entre las empresas
+    #     avg_size = total_workers // num_companies  # Número promedio de trabajadores por empresa
+    #     remaining_workers = total_workers % num_companies  # Número de trabajadores restantes
+
+    #     # Inicializar las empresas (subclusters)
+    #     company_sizes = [avg_size] * num_companies
+
+    #     # Asignar los trabajadores restantes (si los hay) de manera circular
+    #     for i in range(remaining_workers):
+    #         company_sizes[i] += 1
+
+    #     # Asignar trabajadores a las empresas de acuerdo a los tamaños calculados
     #     unassigned_agents = workers.copy()
-
+        
     #     for size in company_sizes:
     #         if not unassigned_agents:
     #             break
-    #         size = min(size, len(unassigned_agents))
+    #         size = min(size, len(unassigned_agents))  # Asegurar que no exceda el número de trabajadores disponibles
     #         work_agents = unassigned_agents[:size]
     #         unassigned_agents = unassigned_agents[size:]
-    #         work_subclusters.append(Subcluster(work_agents,cluster, topology="scale_free"))
+    #         work_subclusters.append(Subcluster(work_agents, cluster, topology="scale_free"))
         
     #     cluster.subclusters = work_subclusters
-    #     print(f"Se generaron : {len(cluster.subclusters)} trabajos")
+    #     print(f"Se generaron: {len(cluster.subclusters)} empresas con tamaños dinámicos")
     #     return cluster
-    
+
     
     def generate_shopping_clusters(self, agents):
         shopping_subclusters = []
-        cluster = ClusterWithSubclusters(shopping_subclusters, "shopping", ["evening"],interaction_probability=random.uniform(0.1, 0.4))
+        external_store_factor = self.total_stores
+        
+        # Crear el cluster de compras con su interacción
+        cluster = ClusterWithSubclusters(shopping_subclusters, "shopping", ["evening"], interaction_probability=random.uniform(0.1, 0.4))
+        
+        # Seleccionar un representante por hogar mayor de 18 años
         household_representatives = {}
-
-        # ✅ Seleccionar un representante mayor de 18 años por hogar
         for agent in agents:  
             if agent.household_id not in household_representatives and agent.age >= 18:
                 household_representatives[agent.household_id] = agent
-
+        
         shoppers = list(household_representatives.values())
         random.shuffle(shoppers)
-
-        # ✅ Usar self.total_stores como número fijo de tiendas
-        num_shopping_centers = min(self.total_stores, max(1, len(shoppers) // 50))
-
-        if num_shopping_centers == 0:
-            return ClusterWithSubclusters([], "shopping", ["evening"])  # Evitar errores si no hay shoppers
-
-        # ✅ Distribuir compradores en las tiendas
-        shopping_sizes = [random.randint(15, 40) for _ in range(num_shopping_centers)]  
+        
+        # Calcular el número de tiendas en base a un factor externo o por defecto en función de los compradores
+        if external_store_factor is not None:
+            num_shopping_centers = max(1, min(external_store_factor, len(shoppers) // 50))
+        else:
+            num_shopping_centers = min(self.total_stores, max(1, len(shoppers) // 50))
+        
+        # Ajustar tamaños dinámicos de las tiendas según la cantidad de compradores
+        total_shoppers = len(shoppers)
+        if total_shoppers < num_shopping_centers * 15:
+            shopping_sizes = [1 for _ in range(total_shoppers)]  # Si hay más tiendas que compradores
+        else:
+            avg_size = total_shoppers // num_shopping_centers
+            shopping_sizes = [avg_size for _ in range(num_shopping_centers)]
+            
+            remaining_shoppers = total_shoppers - sum(shopping_sizes)
+            for i in range(remaining_shoppers):
+                shopping_sizes[i % num_shopping_centers] += 1  # Distribuir compradores restantes
+        
+        # Asignar compradores a las tiendas
         unassigned_shoppers = shoppers.copy()
-
         for size in shopping_sizes:
             if not unassigned_shoppers:
                 break
             size = min(size, len(unassigned_shoppers))
             shopping_agents = unassigned_shoppers[:size]
             unassigned_shoppers = unassigned_shoppers[size:]
-            shopping_subclusters.append(Subcluster(shopping_agents,cluster, topology="scale_free"))
-
+            shopping_subclusters.append(Subcluster(shopping_agents, cluster, topology="scale_free"))
+        
         cluster.subclusters = shopping_subclusters
-        print(f"Se generaron : {len(cluster.subclusters)} tiendas")
+        print(f"Se generaron {len(cluster.subclusters)} tiendas")
         return cluster
 
+    # def generate_shopping_clusters(self, agents, external_store_factor=None):
+    #     # Lista para almacenar los subclusters (tiendas)
+    #     shopping_subclusters = []
+        
+    #     # Crear el cluster de compras, se asigna un nombre y un tipo de interacción
+    #     cluster = ClusterWithSubclusters(shopping_subclusters, "shopping", ["evening"], interaction_probability=random.uniform(0.1, 0.4))
+        
+    #     # Diccionario para seleccionar un representante por hogar mayor de 18 años
+    #     household_representatives = {}
 
+    #     # ✅ Seleccionar un representante mayor de 18 años por hogar
+    #     for agent in agents:  
+    #         if agent.household_id not in household_representatives and agent.age >= 18:
+    #             household_representatives[agent.household_id] = agent
+
+    #     # Obtener la lista de compradores (representantes de cada hogar)
+    #     shoppers = list(household_representatives.values())
+    #     random.shuffle(shoppers)  # Aleatorizar el orden de los compradores para evitar sesgos
+
+    #     # ✅ Calcular el número de tiendas
+    #     if external_store_factor is not None:
+    #         # Si se proporciona un factor externo de tiendas, usarlo
+    #         num_shopping_centers = max(1, min(external_store_factor, len(shoppers) // 50))
+    #     else:
+    #         # Si no se proporciona un factor externo, calcular según la cantidad de compradores
+    #         num_shopping_centers = min(self.total_stores, max(1, len(shoppers) // 50))
+
+    #     # Si no hay compradores, no generar subclusters
+    #     if num_shopping_centers == 0:
+    #         return ClusterWithSubclusters([], "shopping", ["evening"])  # Evitar errores si no hay compradores
+
+    #     # ✅ Ajustar tamaños de las tiendas de manera dinámica
+    #     total_shoppers = len(shoppers)
+        
+    #     # Si hay pocos compradores, reducimos el tamaño de cada tienda
+    #     if total_shoppers < num_shopping_centers * 15:
+    #         # Si hay más tiendas que compradores, asignamos tamaños pequeños
+    #         shopping_sizes = [1 for _ in range(total_shoppers)]  # Cada tienda tiene al menos un comprador
+    #     else:
+    #         # Si hay muchos compradores, calculamos el tamaño basado en la cantidad de compradores
+    #         avg_size = total_shoppers // num_shopping_centers
+    #         shopping_sizes = [avg_size for _ in range(num_shopping_centers)]
+            
+    #         # Ajustamos para que no haya tiendas sobrecargadas ni vacías
+    #         remaining_shoppers = total_shoppers - sum(shopping_sizes)
+    #         for i in range(remaining_shoppers):
+    #             shopping_sizes[i % num_shopping_centers] += 1  # Distribuimos los compradores restantes de manera uniforme
+
+    #     # Asignar los compradores a las tiendas
+    #     unassigned_shoppers = shoppers.copy()  # Copiar la lista de compradores para distribuirlos en las tiendas
+        
+    #     for size in shopping_sizes:
+    #         if not unassigned_shoppers:  # Si no hay más compradores, salir
+    #             break
+    #         size = min(size, len(unassigned_shoppers))  # No asignar más compradores de los que hay disponibles
+    #         shopping_agents = unassigned_shoppers[:size]
+    #         unassigned_shoppers = unassigned_shoppers[size:]
+            
+    #         # Crear subcluster para la tienda con los compradores asignados
+    #         shopping_subclusters.append(Subcluster(shopping_agents, cluster, topology="scale_free"))
+
+    #     # Asignar los subclusters al cluster
+    #     cluster.subclusters = shopping_subclusters
+
+    #     # Informar el número de tiendas generadas
+    #     print(f"Se generaron {len(cluster.subclusters)} tiendas")
+
+    #     # Devolver el cluster con los subclusters (tiendas) generados
+    #     return cluster
+
+    # def generate_shopping_clusters(self, agents):
+    #     shopping_subclusters = []
+    #     cluster = ClusterWithSubclusters(shopping_subclusters, "shopping", ["evening"],interaction_probability=random.uniform(0.1, 0.4))
+    #     household_representatives = {}
+
+    #     # ✅ Seleccionar un representante mayor de 18 años por hogar
+    #     for agent in agents:  
+    #         if agent.household_id not in household_representatives and agent.age >= 18:
+    #             household_representatives[agent.household_id] = agent
+
+    #     shoppers = list(household_representatives.values())
+    #     random.shuffle(shoppers)
+
+    #     # ✅ Usar self.total_stores como número fijo de tiendas
+    #     num_shopping_centers = min(self.total_stores, max(1, len(shoppers) // 50))
+
+    #     if num_shopping_centers == 0:
+    #         return ClusterWithSubclusters([], "shopping", ["evening"])  # Evitar errores si no hay shoppers
+
+    #     # ✅ Distribuir compradores en las tiendas
+    #     shopping_sizes = [random.randint(15, 40) for _ in range(num_shopping_centers)]  
+    #     unassigned_shoppers = shoppers.copy()
+
+    #     for size in shopping_sizes:
+    #         if not unassigned_shoppers:
+    #             break
+    #         size = min(size, len(unassigned_shoppers))
+    #         shopping_agents = unassigned_shoppers[:size]
+    #         unassigned_shoppers = unassigned_shoppers[size:]
+    #         shopping_subclusters.append(Subcluster(shopping_agents,cluster, topology="scale_free"))
+
+    #     cluster.subclusters = shopping_subclusters
+    #     print(f"Se generaron : {len(cluster.subclusters)} tiendas")
+    #     return cluster
+
+    
     def generate_school_clusters(self, agents):
         school_subclusters = []
         cluster = ClusterWithSubclusters(school_subclusters, "school", ["daytime"], interaction_probability=random.uniform(0.5, 0.9))
@@ -388,8 +648,10 @@ class CityClusterGenerator:
         # Filtrar estudiantes por rango de edad y asignarlos a escuelas
         for school_type, num_schools in total_schools.items():
             if school_type not in school_age_mapping:
+                print(f"Advertencia: El tipo de escuela '{school_type}' no tiene un rango de edad asignado.")
                 continue  # Saltar tipos de escuelas no definidos en el mapeo
 
+            # Obtener el rango de edad para el tipo de escuela actual
             age_range = school_age_mapping[school_type]
             
             # Filtrar estudiantes en el rango de edad correspondiente
@@ -398,12 +660,18 @@ class CityClusterGenerator:
                 if agent.occupation == "student" 
                 and age_range[0] <= agent.age <= age_range[1]
             ]
-            random.shuffle(students)
+            random.shuffle(students)  # Aleatorizar estudiantes para evitar sesgos
 
-            # Crear escuelas del tipo actual
-            school_sizes = [random.randint(20, 50) for _ in range(int(num_schools))]
+            # Si no hay estudiantes para este tipo de escuela, se omite
+            if not students:
+                print(f"No se encontraron estudiantes para '{school_type}' en el rango de edad {age_range}.")
+                continue
+
+            # Crear el número de escuelas del tipo actual
+            school_sizes = self._get_school_sizes(num_schools, len(students))
             unassigned_students = students.copy()
 
+            # Asignar estudiantes a las escuelas generadas
             for size in school_sizes:
                 if not unassigned_students:
                     break  # No hay más estudiantes para asignar
@@ -412,12 +680,84 @@ class CityClusterGenerator:
                 school_agents = unassigned_students[:size]
                 unassigned_students = unassigned_students[size:]
 
-                # Crear un subcluster para la escuela
+                # Crear un subcluster para la escuela con los estudiantes asignados
                 school_subclusters.append(Subcluster(school_agents, cluster, topology="scale_free"))
 
+        # Asignar los subclusters generados al cluster general
         cluster.subclusters = school_subclusters
-        print(f"Se generaron : {len(cluster.subclusters)} escuelas")
+        print(f"Se generaron {len(cluster.subclusters)} escuelas.")
         return cluster
+
+    def _get_school_sizes(self, num_schools, total_students):
+        """Calcula los tamaños de las escuelas basándose en el número de estudiantes y el número de escuelas."""
+        if num_schools == 0:
+            return []  # Si no hay escuelas, no se puede generar tamaño de escuela
+        
+        avg_size = total_students // num_schools  # Tamaño promedio de la escuela
+        remaining_students = total_students % num_schools  # Estudiantes restantes por distribuir
+
+        # Inicializamos los tamaños de las escuelas
+        school_sizes = [avg_size for _ in range(num_schools)]
+
+        # Distribuir los estudiantes restantes de manera uniforme entre las escuelas
+        for i in range(remaining_students):
+            school_sizes[i % num_schools] += 1
+
+        return school_sizes
+
+
+
+
+    # def generate_school_clusters(self, agents):
+    #     school_subclusters = []
+    #     cluster = ClusterWithSubclusters(school_subclusters, "school", ["daytime"], interaction_probability=random.uniform(0.5, 0.9))
+        
+    #     # Mapeo de tipos de escuelas a rangos de edad
+    #     school_age_mapping = {
+    #         "Círculos infantiles": (0, 5),
+    #         "Primaria": (6, 11),
+    #         "Media": (12, 14),
+    #         "Secundaria": (15, 17),
+    #         "Preuniversitario": (18, 19),
+    #         "Tecnica y profesional": (18, 22)
+    #     }
+
+    #     # Obtener el número total de escuelas por tipo desde el diccionario general
+    #     total_schools = self.data.get("Escuelas_Total", {})
+        
+    #     # Filtrar estudiantes por rango de edad y asignarlos a escuelas
+    #     for school_type, num_schools in total_schools.items():
+    #         if school_type not in school_age_mapping:
+    #             continue  # Saltar tipos de escuelas no definidos en el mapeo
+
+    #         age_range = school_age_mapping[school_type]
+            
+    #         # Filtrar estudiantes en el rango de edad correspondiente
+    #         students = [
+    #             agent for agent in agents 
+    #             if agent.occupation == "student" 
+    #             and age_range[0] <= agent.age <= age_range[1]
+    #         ]
+    #         random.shuffle(students)
+
+    #         # Crear escuelas del tipo actual
+    #         school_sizes = [random.randint(20, 50) for _ in range(int(num_schools))]
+    #         unassigned_students = students.copy()
+
+    #         for size in school_sizes:
+    #             if not unassigned_students:
+    #                 break  # No hay más estudiantes para asignar
+
+    #             size = min(size, len(unassigned_students))  # Asegurar que no exceda el número de estudiantes disponibles
+    #             school_agents = unassigned_students[:size]
+    #             unassigned_students = unassigned_students[size:]
+
+    #             # Crear un subcluster para la escuela
+    #             school_subclusters.append(Subcluster(school_agents, cluster, topology="scale_free"))
+
+    #     cluster.subclusters = school_subclusters
+    #     print(f"Se generaron : {len(cluster.subclusters)} escuelas")
+    #     return cluster
     # def generate_school_clusters(self, agents):
     #     school_subclusters = []
     #     cluster = ClusterWithSubclusters(school_subclusters, "school", ["daytime"], interaction_probability= random.uniform(0.5,0.9))
