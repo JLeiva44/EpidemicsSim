@@ -2,8 +2,7 @@ import random
 from abc import ABC, abstractmethod
 from epidemics_sim.agents.base_agent import State
 import math
-from epidemics_sim.simulation.logger import setup_logger
-logger = setup_logger()
+
 class DiseaseModel(ABC):
     def __init__(
         self,
@@ -49,7 +48,9 @@ class DiseaseModel(ABC):
         """
         for agent in agents:
             agent.transition(State.INFECTED, reason=f"Initial {self.name} infection")
-            agent.days_infected = 0
+            #agent.days_infected = 1
+            agent.incubation_period = 0
+            agent.initial = True
             asymptomatic = random.random() < self.asymptomatic_probability
             agent.infection_status = {
                 "disease": self.name,
@@ -58,7 +59,7 @@ class DiseaseModel(ABC):
                 "contagious": True,  
                 "days_infected": 0,
                 "asymptomatic": asymptomatic,
-                "diagnosis_delay": random.randint(7,15) if random.rand() < 0.5 else None if asymptomatic else 0
+                "diagnosis_delay": 0
             }
 
     def propagate(self, daily_interactions, agents):
@@ -78,7 +79,7 @@ class DiseaseModel(ABC):
                     print("Estan llegando agentes isolados u hospitalizados a la propagacion")
                 # Aqui no deben llegar agentes isolados u hospitalizados porque los quito de las interaciones en simulate_day
                 #logger.info("Agentes que se infestaron dentro de propagate")
-                if agents[id1].infection_status["state"] is State.INFECTED and agents[id1].infection_status["contagious"] and agents[id2].infection_status["state"] is State.SUSCEPTIBLE and not agents[id2].immune:
+                if agents[id1].infection_status["state"] is State.INFECTED and agents[id1].infection_status["contagious"] and (agents[id2].infection_status["state"] is State.SUSCEPTIBLE or agents[id2].infection_status["state"] is State.RECOVERED) and not agents[id2].immune:
                     transmission_probability = self.calculate_transmission_probability(id1, id2,agents)
                     if random.random() < transmission_probability:
                         agent1_asymptomatic = agents[id1].infection_status["asymptomatic"]
@@ -98,14 +99,14 @@ class DiseaseModel(ABC):
                                 agents[id2].infection_status["diagnosis_delay"] = random.randint(4,8)
 
                             else : # el que me contagio es asintomatico y yo tambien 
-                                agents[id2].infection_status["diagnosis_delay"] = random.randint(7, 15) if random.random() < 0.5 else None  # Diagnóstico tardío o nunca  
+                                agents[id2].infection_status["diagnosis_delay"] = random.randint(7, 15) if random.random() < 0.5 else float('inf')  # Diagnóstico tardío o nunca  
 
                         
                         # DE uno a tres dias
                         new[count_evaluation] = agents[id2]
                         #logger.debug(f"Infestado el agente {id2}")
                 
-                if agents[id2].infection_status["state"] is State.INFECTED and agents[id2].infection_status["contagious"] and agents[id1].infection_status["state"] is State.SUSCEPTIBLE and not agents[id1].immune:
+                if agents[id2].infection_status["state"] is State.INFECTED and agents[id2].infection_status["contagious"] and (agents[id1].infection_status["state"] is State.SUSCEPTIBLE or agents[id1].infection_status["state"] is State.RECOVERED) and not agents[id1].immune:
                     transmission_probability = self.calculate_transmission_probability(id2, id1,agents) 
                     if random.random() < transmission_probability:
                         count_evaluation += 1
@@ -126,7 +127,7 @@ class DiseaseModel(ABC):
                                 agents[id1].infection_status["diagnosis_delay"] = random.randint(4,8)
 
                             else : # el que me contagio es asintomatico y yo tambien 
-                                agents[id1].infection_status["diagnosis_delay"] = random.randint(7, 15) if random.random() < 0.5 else None  # Diagnóstico tardío o nunca  
+                                agents[id1].infection_status["diagnosis_delay"] = random.randint(7, 15) if random.random() < 0.5 else float('inf')  # Diagnóstico tardío o nunca  
 
                         
                         #agents[id1].infection_status["diagnosis_delay"] = None if agents[id1].infection_status["asymptomatic"] else random.randint(1,4)
@@ -142,56 +143,7 @@ class DiseaseModel(ABC):
         
                 
 
-    # def _evaluate_transmission(self, interaction, agents):
-    #     """
-    #     Evaluate transmission between two agents.
-
-    #     :param interaction: Tuple (agent1, agent2).
-    #     """
-    #     agent1, agent2 = interaction
-    #     if agents[agent1].infection_status["contagious"] and agents[agent2].infection_status["state"] is State.SUSCEPTIBLE:
-    #         return self._attempt_infection(agent1, agent2, agents)
-    #     if agents[agent2].infection_status["contagious"] and agents[agent1].infection_status["state"] is State.SUSCEPTIBLE:
-    #         return self._attempt_infection(agent2, agent1, agents)
-
-    # def _attempt_infection(self, source, target, agents):
-    #     """
-    #     Attempt to infect the target agent from the source agent.
-
-    #     :param source: Source agent.
-    #     :param target: Target agent.
-    #     """
-    #     count_attempt = 0 
-    #     count_good = 0
-    #     print("Intentando infectar")
-    #     if agents[target].infection_status["state"] is State.SUSCEPTIBLE and not agents[target].immune:
-    #         transmission_probability = self.calculate_transmission_probability(source, target,agents)
-    #         print(f"probabilidad de transmision {transmission_probability}")
-    #         count_attempt += 1
-    #         if random.random() < transmission_probability:
-    #             count_good +=1
-    #             agents[target].transition(State.INFECTED, reason=f"Infected by {self.name}")
-    #             agents[target].infection_status["disase"] = self.name
-    #             agents[target].infection_status["state"] = State.INFECTED
-    #             agents[target].infection_status["contagious"] = True
-    #             agents[target].infection_status["severity"] = None
-    #             agents[target].infection_status["days_infected"] = 0
-    #             agents[target].infection_status["asymptomatic"] = random.random() < self.asymptomatic_probability
-    #             agents[target].infection_status["immunity_days"] = self.immunity_duration
-    #             # agents[target].infection_status.update({
-    #             #     "disease": self.name,
-    #             #     "state": State.INFECTED,
-    #             #     "contagious": True,
-    #             #     "severity": None,
-    #             #     "days_infected": 0,
-    #             #     "asymptomatic": random.random() < self.asymptomatic_probability,
-    #             #     "immunity_days": self.immunity_duration
-    #             # })
-    #             #print(target.municipio)
-    #             return agents[target]  
-
-    #     #print(f"Intentos de infeccion {count_attempt} y exitosos {count_good}")        
-
+    
     def calculate_transmission_probability(self, source, target, agents):
         """
         Calculate the transmission probability specific to the disease.
@@ -220,7 +172,7 @@ class DiseaseModel(ABC):
 
         :param agent: The agent whose infection state is being progressed.
         """
-        if agents[agent].infection_status["days_infected"] == 0:
+        if agents[agent].infection_status["days_infected"] == 0 and not agents[agent].initial:
             # incubation_period = random.gauss(self.mean_incubation_period[0], self.mean_incubation_period[1])
             incubation_period = round(random.gauss(self.mean_incubation_period[0], self.mean_incubation_period[1]))
             agents[agent].incubation_period = max(incubation_period, 0)
@@ -314,6 +266,7 @@ class DiseaseModel(ABC):
                 # 3.3️⃣ ¿La inmunidad es temporal?
                 if self.immunity_duration > 0:
                     agents[agent].infection_status["immunity_days"] = self.immunity_duration
+                    agents[agent].inmune = True
                 else:
                     agents[agent].infection_status["immunity_days"] = 0
                 return
