@@ -58,7 +58,7 @@ class DiseaseModel(ABC):
                 "contagious": True,  
                 "days_infected": 0,
                 "asymptomatic": asymptomatic,
-                "diagnosis_delay": None if asymptomatic else 0
+                "diagnosis_delay": random.randint(7,15) if random.rand() < 0.5 else None if asymptomatic else 0
             }
 
     def propagate(self, daily_interactions, agents):
@@ -81,6 +81,7 @@ class DiseaseModel(ABC):
                 if agents[id1].infection_status["state"] is State.INFECTED and agents[id1].infection_status["contagious"] and agents[id2].infection_status["state"] is State.SUSCEPTIBLE and not agents[id2].immune:
                     transmission_probability = self.calculate_transmission_probability(id1, id2,agents)
                     if random.random() < transmission_probability:
+                        agent1_asymptomatic = agents[id1].infection_status["asymptomatic"]
                         count_evaluation += 1
                         agents[id2].transition(State.INFECTED, reason=f"Infected by {self.name}")
                         agents[id2].infection_status["disease"] = self.name
@@ -90,8 +91,16 @@ class DiseaseModel(ABC):
                         agents[id2].infection_status["days_infected"] = 0
                         agents[id2].infection_status["asymptomatic"] = random.random() < self.asymptomatic_probability
                         agents[id2].infection_status["immunity_days"] = self.immunity_duration
+                        if not agents[id2].infection_status["asymptomatic"]: # SI soy sintomatico
+                            agents[id2].infection_status["diagnosis_delay"] = random.randint(1,4)
+                        else: # Soy asintomatico
+                            if not agent1_asymptomatic : # Se sabe que el agente 1 es positivo en algun momemnto y me rastrean
+                                agents[id2].infection_status["diagnosis_delay"] = random.randint(4,8)
+
+                            else : # el que me contagio es asintomatico y yo tambien 
+                                agents[id2].infection_status["diagnosis_delay"] = random.randint(7, 15) if random.random() < 0.5 else None  # Diagnóstico tardío o nunca  
+
                         
-                        agents[id2].infection_status["diagnosis_delay"] = None if agents[id2].infection_status["asymptomatic"] else random.randint(1,4)
                         # DE uno a tres dias
                         new[count_evaluation] = agents[id2]
                         #logger.debug(f"Infestado el agente {id2}")
@@ -100,16 +109,27 @@ class DiseaseModel(ABC):
                     transmission_probability = self.calculate_transmission_probability(id2, id1,agents) 
                     if random.random() < transmission_probability:
                         count_evaluation += 1
+                        agent2_asymptomatic = agents[id2].infection_status["asymptomatic"]
                         agents[id1].transition(State.INFECTED, reason=f"Infected by {self.name}")
                         agents[id1].infection_status["disease"] = self.name
                         agents[id1].infection_status["state"] = State.INFECTED
-                        agents[id1].infection_status["contagious"] = True
+                        agents[id1].infection_status["contagious"] = False
                         agents[id1].infection_status["severity"] = None
                         agents[id1].infection_status["days_infected"] = 0
                         agents[id1].infection_status["asymptomatic"] = random.random() < self.asymptomatic_probability
                         agents[id1].infection_status["immunity_days"] = self.immunity_duration
                         
-                        agents[id1].infection_status["diagnosis_delay"] = None if agents[id1].infection_status["asymptomatic"] else random.randint(1,4)
+                        if not agents[id1].infection_status["asymptomatic"]: # SI soy sintomatico
+                            agents[id1].infection_status["diagnosis_delay"] = random.randint(1,4)
+                        else: # Soy asintomatico
+                            if not agent2_asymptomatic : # Se sabe que el agente 1 es positivo en algun momemnto y me rastrean
+                                agents[id1].infection_status["diagnosis_delay"] = random.randint(4,8)
+
+                            else : # el que me contagio es asintomatico y yo tambien 
+                                agents[id1].infection_status["diagnosis_delay"] = random.randint(7, 15) if random.random() < 0.5 else None  # Diagnóstico tardío o nunca  
+
+                        
+                        #agents[id1].infection_status["diagnosis_delay"] = None if agents[id1].infection_status["asymptomatic"] else random.randint(1,4)
                         new[count_evaluation] = agents[id1]
                         #logger.debug(f"Infestado el agente {id1}")
                 
