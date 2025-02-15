@@ -326,49 +326,7 @@ class CityClusterGenerator:
         print("Home clusters generated with a more realistic composition")
         return cluster
 
-    # def generate_home_clusters(self, agents): # TODO mejorar la asinacion de hogares para no tener que apsar de nuevo
-    #     home_subclusters = []
-    #     household_id_counter = 0  # 🔹 Contador único para asignar household_id
-    #     cluster = ClusterWithSubclusters(home_subclusters, "home", ["morning", "night"],interaction_probability=random.uniform(0.8, 1.0))
-
-    #     for municipio, data in self.municipal_data.items():
-    #         municipio_agents = [agent for agent in agents if agent.municipio == municipio]
-    #         total_population = len(municipio_agents)
-    #         avg_household_size = float(data["Promedio de Personas por Unidad de Alojamiento"])
-
-    #         # Determinar la cantidad de hogares a partir del promedio
-    #         estimated_households = max(1, round(total_population / avg_household_size))
-
-    #         random.shuffle(municipio_agents)
-    #         unassigned_agents = municipio_agents.copy()
-
-    #         for _ in range(estimated_households):
-    #             if not unassigned_agents:
-    #                 break
-    #             size = max(1, round(random.gauss(avg_household_size, 1)))  # Distribución normal alrededor del promedio
-    #             size = min(size, len(unassigned_agents))  
-
-    #             household_agents = unassigned_agents[:size]
-    #             unassigned_agents = unassigned_agents[size:]
-
-    #             # Asegurar que al menos haya un adulto en el hogar
-    #             if not any(agent.age >= 18 for agent in household_agents):
-    #                 adults = [a for a in unassigned_agents if a.age >= 18]
-    #                 if adults:
-    #                     household_agents[-1] = adults.pop(0)
-    #                     unassigned_agents.remove(household_agents[-1])
-
-    #             # 🔹 Asignar un household_id único a todos los agentes en este hogar
-    #             for agent in household_agents:
-    #                 agent.household_id = household_id_counter
-    #                 agent.household = household_agents
-    #             household_id_counter += 1  # Incrementar para el siguiente hogar
-
-    #             home_subclusters.append(Subcluster(household_agents,cluster, topology="complete"))
-
-    #     cluster.subclusters = home_subclusters
-    #     print("Home clusters generated")
-    #     return cluster
+    
 
     def generate_work_clusters(self, agents):
         work_subclusters = []
@@ -395,7 +353,7 @@ class CityClusterGenerator:
         # Generar las empresas por municipio según el dato en "empresas"
         for municipio, worker_list in municipal_worker_distribution.items():
             # Obtener la cantidad de empresas en este municipio
-            num_companies = self.municipal_data[municipio].get("empresas", 0)
+            num_companies = self.municipal_data[municipio].get("Centros_Laborales", 0)
             if num_companies == 0:
                 continue  # Si no hay empresas en el municipio, no asignamos trabajadores
             
@@ -428,52 +386,6 @@ class CityClusterGenerator:
         print(f"Se generaron: {len(cluster.subclusters)} empresas")
         return cluster
 
-    # def generate_work_clusters(self, agents):
-    #     work_subclusters = []
-    #     cluster = ClusterWithSubclusters(work_subclusters, "work", ["daytime"], interaction_probability=random.uniform(0.3, 0.6))
-        
-    #     workers = [agent for agent in agents if agent.occupation == "worker"]
-    #     random.shuffle(workers)  # Aleatorizar el orden de los trabajadores para evitar sesgos
-        
-    #     total_workers = len(workers)
-    #     if total_workers == 0:
-    #         print("No hay trabajadores disponibles para asignar a empresas.")
-    #         return cluster
-        
-    #     # Usar self.total_companies como el número de empresas
-    #     num_companies = self.total_companies
-        
-    #     # Si hay más empresas que trabajadores, asignamos al menos un trabajador a cada empresa
-    #     if num_companies > total_workers:
-    #         num_companies = total_workers  # Aseguramos que no se asignen más empresas que trabajadores
-
-    #     # Distribuir los trabajadores entre las empresas
-    #     avg_size = total_workers // num_companies  # Número promedio de trabajadores por empresa
-    #     remaining_workers = total_workers % num_companies  # Número de trabajadores restantes
-
-    #     # Inicializar las empresas (subclusters)
-    #     company_sizes = [avg_size] * num_companies
-
-    #     # Asignar los trabajadores restantes (si los hay) de manera circular
-    #     for i in range(remaining_workers):
-    #         company_sizes[i] += 1
-
-    #     # Asignar trabajadores a las empresas de acuerdo a los tamaños calculados
-    #     unassigned_agents = workers.copy()
-        
-    #     for size in company_sizes:
-    #         if not unassigned_agents:
-    #             break
-    #         size = min(size, len(unassigned_agents))  # Asegurar que no exceda el número de trabajadores disponibles
-    #         work_agents = unassigned_agents[:size]
-    #         unassigned_agents = unassigned_agents[size:]
-    #         work_subclusters.append(Subcluster(work_agents, cluster, topology="scale_free"))
-        
-    #     cluster.subclusters = work_subclusters
-    #     print(f"Se generaron: {len(cluster.subclusters)} empresas con tamaños dinámicos")
-    #     return cluster
-
-    
     def generate_shopping_clusters(self, agents):
         shopping_subclusters = []
         external_store_factor = self.total_stores
@@ -522,112 +434,6 @@ class CityClusterGenerator:
         print(f"Se generaron {len(cluster.subclusters)} tiendas")
         return cluster
 
-    # def generate_shopping_clusters(self, agents, external_store_factor=None):
-    #     # Lista para almacenar los subclusters (tiendas)
-    #     shopping_subclusters = []
-        
-    #     # Crear el cluster de compras, se asigna un nombre y un tipo de interacción
-    #     cluster = ClusterWithSubclusters(shopping_subclusters, "shopping", ["evening"], interaction_probability=random.uniform(0.1, 0.4))
-        
-    #     # Diccionario para seleccionar un representante por hogar mayor de 18 años
-    #     household_representatives = {}
-
-    #     # ✅ Seleccionar un representante mayor de 18 años por hogar
-    #     for agent in agents:  
-    #         if agent.household_id not in household_representatives and agent.age >= 18:
-    #             household_representatives[agent.household_id] = agent
-
-    #     # Obtener la lista de compradores (representantes de cada hogar)
-    #     shoppers = list(household_representatives.values())
-    #     random.shuffle(shoppers)  # Aleatorizar el orden de los compradores para evitar sesgos
-
-    #     # ✅ Calcular el número de tiendas
-    #     if external_store_factor is not None:
-    #         # Si se proporciona un factor externo de tiendas, usarlo
-    #         num_shopping_centers = max(1, min(external_store_factor, len(shoppers) // 50))
-    #     else:
-    #         # Si no se proporciona un factor externo, calcular según la cantidad de compradores
-    #         num_shopping_centers = min(self.total_stores, max(1, len(shoppers) // 50))
-
-    #     # Si no hay compradores, no generar subclusters
-    #     if num_shopping_centers == 0:
-    #         return ClusterWithSubclusters([], "shopping", ["evening"])  # Evitar errores si no hay compradores
-
-    #     # ✅ Ajustar tamaños de las tiendas de manera dinámica
-    #     total_shoppers = len(shoppers)
-        
-    #     # Si hay pocos compradores, reducimos el tamaño de cada tienda
-    #     if total_shoppers < num_shopping_centers * 15:
-    #         # Si hay más tiendas que compradores, asignamos tamaños pequeños
-    #         shopping_sizes = [1 for _ in range(total_shoppers)]  # Cada tienda tiene al menos un comprador
-    #     else:
-    #         # Si hay muchos compradores, calculamos el tamaño basado en la cantidad de compradores
-    #         avg_size = total_shoppers // num_shopping_centers
-    #         shopping_sizes = [avg_size for _ in range(num_shopping_centers)]
-            
-    #         # Ajustamos para que no haya tiendas sobrecargadas ni vacías
-    #         remaining_shoppers = total_shoppers - sum(shopping_sizes)
-    #         for i in range(remaining_shoppers):
-    #             shopping_sizes[i % num_shopping_centers] += 1  # Distribuimos los compradores restantes de manera uniforme
-
-    #     # Asignar los compradores a las tiendas
-    #     unassigned_shoppers = shoppers.copy()  # Copiar la lista de compradores para distribuirlos en las tiendas
-        
-    #     for size in shopping_sizes:
-    #         if not unassigned_shoppers:  # Si no hay más compradores, salir
-    #             break
-    #         size = min(size, len(unassigned_shoppers))  # No asignar más compradores de los que hay disponibles
-    #         shopping_agents = unassigned_shoppers[:size]
-    #         unassigned_shoppers = unassigned_shoppers[size:]
-            
-    #         # Crear subcluster para la tienda con los compradores asignados
-    #         shopping_subclusters.append(Subcluster(shopping_agents, cluster, topology="scale_free"))
-
-    #     # Asignar los subclusters al cluster
-    #     cluster.subclusters = shopping_subclusters
-
-    #     # Informar el número de tiendas generadas
-    #     print(f"Se generaron {len(cluster.subclusters)} tiendas")
-
-    #     # Devolver el cluster con los subclusters (tiendas) generados
-    #     return cluster
-
-    # def generate_shopping_clusters(self, agents):
-    #     shopping_subclusters = []
-    #     cluster = ClusterWithSubclusters(shopping_subclusters, "shopping", ["evening"],interaction_probability=random.uniform(0.1, 0.4))
-    #     household_representatives = {}
-
-    #     # ✅ Seleccionar un representante mayor de 18 años por hogar
-    #     for agent in agents:  
-    #         if agent.household_id not in household_representatives and agent.age >= 18:
-    #             household_representatives[agent.household_id] = agent
-
-    #     shoppers = list(household_representatives.values())
-    #     random.shuffle(shoppers)
-
-    #     # ✅ Usar self.total_stores como número fijo de tiendas
-    #     num_shopping_centers = min(self.total_stores, max(1, len(shoppers) // 50))
-
-    #     if num_shopping_centers == 0:
-    #         return ClusterWithSubclusters([], "shopping", ["evening"])  # Evitar errores si no hay shoppers
-
-    #     # ✅ Distribuir compradores en las tiendas
-    #     shopping_sizes = [random.randint(15, 40) for _ in range(num_shopping_centers)]  
-    #     unassigned_shoppers = shoppers.copy()
-
-    #     for size in shopping_sizes:
-    #         if not unassigned_shoppers:
-    #             break
-    #         size = min(size, len(unassigned_shoppers))
-    #         shopping_agents = unassigned_shoppers[:size]
-    #         unassigned_shoppers = unassigned_shoppers[size:]
-    #         shopping_subclusters.append(Subcluster(shopping_agents,cluster, topology="scale_free"))
-
-    #     cluster.subclusters = shopping_subclusters
-    #     print(f"Se generaron : {len(cluster.subclusters)} tiendas")
-    #     return cluster
-
-    
     def generate_school_clusters(self, agents):
         school_subclusters = []
         cluster = ClusterWithSubclusters(school_subclusters, "school", ["daytime"], interaction_probability=random.uniform(0.5, 0.9))
@@ -637,73 +443,134 @@ class CityClusterGenerator:
             "Círculos infantiles": (0, 5),
             "Primaria": (6, 11),
             "Media": (12, 14),
-            "Secundaria": (15, 17),
+            "Secundaria básica": (15, 17),
             "Preuniversitario": (18, 19),
-            "Tecnica y profesional": (18, 22)
+            "Técnica y profesional": (18, 22)
         }
 
-        # Obtener el número total de escuelas por tipo desde el diccionario general
-        total_schools = self.data.get("Escuelas_Total", {})
-        
-        # Filtrar estudiantes por rango de edad y asignarlos a escuelas
-        for school_type, num_schools in total_schools.items():
-            if school_type not in school_age_mapping:
-                print(f"Advertencia: El tipo de escuela '{school_type}' no tiene un rango de edad asignado.")
-                continue  # Saltar tipos de escuelas no definidos en el mapeo
-
-            # Obtener el rango de edad para el tipo de escuela actual
-            age_range = school_age_mapping[school_type]
+        # Filtrar estudiantes por rango de edad y asignarlos a escuelas por municipio
+        for municipio, data in self.municipal_data.items():
+            # Obtener el número de escuelas por tipo en este municipio
+            schools_in_municipio = data.get("Escuelas", {})
             
-            # Filtrar estudiantes en el rango de edad correspondiente
-            students = [
-                agent for agent in agents 
-                if agent.occupation == "student" 
-                and age_range[0] <= agent.age <= age_range[1]
-            ]
-            random.shuffle(students)  # Aleatorizar estudiantes para evitar sesgos
+            for school_type, num_schools in schools_in_municipio.items():
+                if school_type not in school_age_mapping:
+                    print(f"Advertencia: El tipo de escuela '{school_type}' no tiene un rango de edad asignado.")
+                    continue  # Saltar tipos de escuelas no definidos en el mapeo
 
-            # Si no hay estudiantes para este tipo de escuela, se omite
-            if not students:
-                print(f"No se encontraron estudiantes para '{school_type}' en el rango de edad {age_range}.")
-                continue
+                # Obtener el rango de edad para el tipo de escuela actual
+                age_range = school_age_mapping[school_type]
+                
+                # Filtrar estudiantes en el rango de edad correspondiente y que pertenezcan al municipio
+                students = [
+                    agent for agent in agents 
+                    if agent.occupation == "student" 
+                    and age_range[0] <= agent.age <= age_range[1]
+                    and agent.municipio == municipio
+                ]
+                random.shuffle(students)  # Aleatorizar estudiantes para evitar sesgos
 
-            # Crear el número de escuelas del tipo actual
-            school_sizes = self._get_school_sizes(num_schools, len(students))
-            unassigned_students = students.copy()
+                # Si no hay estudiantes para este tipo de escuela, se omite
+                if not students:
+                    print(f"No se encontraron estudiantes para '{school_type}' en el rango de edad {age_range} en el municipio {municipio}.")
+                    continue
 
-            # Asignar estudiantes a las escuelas generadas
-            for size in school_sizes:
-                if not unassigned_students:
-                    break  # No hay más estudiantes para asignar
+                # Crear el número de escuelas del tipo actual
+                school_sizes = self._get_school_sizes(num_schools, len(students))
+                unassigned_students = students.copy()
 
-                size = min(size, len(unassigned_students))  # Asegurar que no exceda el número de estudiantes disponibles
-                school_agents = unassigned_students[:size]
-                unassigned_students = unassigned_students[size:]
+                # Asignar estudiantes a las escuelas generadas
+                for size in school_sizes:
+                    if not unassigned_students:
+                        break  # No hay más estudiantes para asignar
 
-                # Crear un subcluster para la escuela con los estudiantes asignados
-                school_subclusters.append(Subcluster(school_agents, cluster, topology="scale_free"))
+                    size = min(size, len(unassigned_students))  # Asegurar que no exceda el número de estudiantes disponibles
+                    school_agents = unassigned_students[:size]
+                    unassigned_students = unassigned_students[size:]
+
+                    # Crear un subcluster para la escuela con los estudiantes asignados
+                    school_subclusters.append(Subcluster(school_agents, cluster, topology="scale_free"))
 
         # Asignar los subclusters generados al cluster general
         cluster.subclusters = school_subclusters
         print(f"Se generaron {len(cluster.subclusters)} escuelas.")
         return cluster
-
-    def _get_school_sizes(self, num_schools, total_students):
-        """Calcula los tamaños de las escuelas basándose en el número de estudiantes y el número de escuelas."""
-        if num_schools == 0:
-            return []  # Si no hay escuelas, no se puede generar tamaño de escuela
+    # def generate_school_clusters(self, agents):
+    #     school_subclusters = []
+    #     cluster = ClusterWithSubclusters(school_subclusters, "school", ["daytime"], interaction_probability=random.uniform(0.5, 0.9))
         
-        avg_size = total_students // num_schools  # Tamaño promedio de la escuela
-        remaining_students = total_students % num_schools  # Estudiantes restantes por distribuir
+    #     # Mapeo de tipos de escuelas a rangos de edad
+    #     school_age_mapping = {
+    #         "Círculos infantiles": (0, 5),
+    #         "Primaria": (6, 11),
+    #         "Media": (12, 14),
+    #         "Secundaria": (15, 17),
+    #         "Preuniversitario": (18, 19),
+    #         "Tecnica y profesional": (18, 22)
+    #     }
 
-        # Inicializamos los tamaños de las escuelas
-        school_sizes = [avg_size for _ in range(num_schools)]
+    #     # Obtener el número total de escuelas por tipo desde el diccionario general
+    #     total_schools = self.data.get("Escuelas_Total", {})
+        
+    #     # Filtrar estudiantes por rango de edad y asignarlos a escuelas
+    #     for school_type, num_schools in total_schools.items():
+    #         if school_type not in school_age_mapping:
+    #             print(f"Advertencia: El tipo de escuela '{school_type}' no tiene un rango de edad asignado.")
+    #             continue  # Saltar tipos de escuelas no definidos en el mapeo
 
-        # Distribuir los estudiantes restantes de manera uniforme entre las escuelas
-        for i in range(remaining_students):
-            school_sizes[i % num_schools] += 1
+    #         # Obtener el rango de edad para el tipo de escuela actual
+    #         age_range = school_age_mapping[school_type]
+            
+    #         # Filtrar estudiantes en el rango de edad correspondiente
+    #         students = [
+    #             agent for agent in agents 
+    #             if agent.occupation == "student" 
+    #             and age_range[0] <= agent.age <= age_range[1]
+    #         ]
+    #         random.shuffle(students)  # Aleatorizar estudiantes para evitar sesgos
 
-        return school_sizes
+    #         # Si no hay estudiantes para este tipo de escuela, se omite
+    #         if not students:
+    #             print(f"No se encontraron estudiantes para '{school_type}' en el rango de edad {age_range}.")
+    #             continue
+
+    #         # Crear el número de escuelas del tipo actual
+    #         school_sizes = self._get_school_sizes(num_schools, len(students))
+    #         unassigned_students = students.copy()
+
+    #         # Asignar estudiantes a las escuelas generadas
+    #         for size in school_sizes:
+    #             if not unassigned_students:
+    #                 break  # No hay más estudiantes para asignar
+
+    #             size = min(size, len(unassigned_students))  # Asegurar que no exceda el número de estudiantes disponibles
+    #             school_agents = unassigned_students[:size]
+    #             unassigned_students = unassigned_students[size:]
+
+    #             # Crear un subcluster para la escuela con los estudiantes asignados
+    #             school_subclusters.append(Subcluster(school_agents, cluster, topology="scale_free"))
+
+    #     # Asignar los subclusters generados al cluster general
+    #     cluster.subclusters = school_subclusters
+    #     print(f"Se generaron {len(cluster.subclusters)} escuelas.")
+    #     return cluster
+
+    # def _get_school_sizes(self, num_schools, total_students):
+    #     """Calcula los tamaños de las escuelas basándose en el número de estudiantes y el número de escuelas."""
+    #     if num_schools == 0:
+    #         return []  # Si no hay escuelas, no se puede generar tamaño de escuela
+        
+    #     avg_size = total_students // num_schools  # Tamaño promedio de la escuela
+    #     remaining_students = total_students % num_schools  # Estudiantes restantes por distribuir
+
+    #     # Inicializamos los tamaños de las escuelas
+    #     school_sizes = [avg_size for _ in range(num_schools)]
+
+    #     # Distribuir los estudiantes restantes de manera uniforme entre las escuelas
+    #     for i in range(remaining_students):
+    #         school_sizes[i % num_schools] += 1
+
+    #     return school_sizes
 
 
 
