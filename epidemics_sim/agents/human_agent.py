@@ -130,6 +130,8 @@ class HumanAgent(BaseAgent):
                 self.isolated = False
                 self.isolation_days = 0
 
+    def __eq__(self, value):
+        return self.agent_id == value.agent_id
 
     def __repr__(self):
         return (

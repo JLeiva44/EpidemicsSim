@@ -57,7 +57,7 @@ params = {
     }
     },
     "days" : 15,
-    "initial_infected": 3
+    "initial_infected": 1
 }
 CONTROLLER = SimulationController(params["demographics"],params["disease"],params["policies_config"],params["days"],params["initial_infected"])
 

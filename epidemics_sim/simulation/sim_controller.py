@@ -5,8 +5,7 @@ from epidemics_sim.policies.lockdown_policy import LockdownPolicy
 from epidemics_sim.policies.social_distancing_policy import SocialDistancingPolicy
 from epidemics_sim.policies.vaccination_policy import VaccinationPolicy
 from epidemics_sim.policies.mask_policy import MaskUsagePolicy
-from epidemics_sim.simulation.synthetic_population import SyntheticPopulationGenerator #TODO: Cambiar esto a intethic
-from epidemics_sim.simulation.transport_interaction import TransportInteraction
+from epidemics_sim.simulation.sin_last import SyntheticPopulationGenerator #TODO: Cambiar esto a intethic
 from epidemics_sim.healthcare.healthcare_system import HealthcareSystem
 
 class SimulationController:
@@ -28,7 +27,7 @@ class SimulationController:
         self.agents = self._generate_agents()
         self.cluster_generator = CityClusterGenerator(demographics)
         self.policies = self._configurate_policies(policies_config)
-        self.heathcare_system = HealthcareSystem(5000, 10000, self.policies, self.demographics["municipios"])
+        self.heathcare_system = HealthcareSystem(500, 10000, self.policies, self.demographics["municipios"])
         
     def _configurate_policies(self, policies_config):
         """

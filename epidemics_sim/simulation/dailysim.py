@@ -2,9 +2,8 @@ import random
 from epidemics_sim.simulation.clusters import CityClusterGenerator
 from epidemics_sim.agents.base_agent import State
 from multiprocessing import Pool
-from epidemics_sim.simulation.logger import setup_logger
 
-logger = setup_logger()
+#logger = setup_logger()
 
 class DailySimulation:
     def __init__(self, agents, cluster_generator, disease_model, policies, healthcare_system, initial_infected):
@@ -68,28 +67,19 @@ class DailySimulation:
             simulation_results.append(daily_summary)
 
             # 2️⃣ Propagar enfermedad solo con los agentes activos
-            infected = self.disease_model.propagate(daily_summary, self.agents)
-            print(f"Agentes infectados despues de la propagacion: {len(infected)}")
+            infectados = self.disease_model.propagate(daily_summary, self.agents)
+            print(f"Agentes infectados despues de la propagacion: {len(infectados)}")
 
-            count = 0
-            logger.info("Agentes de nwe ..................")
-            for agent in infected.keys():
-                if infected[agent].infection_status['state'] is State.INFECTED:
-                    logger.debug(infected[agent])
-                    count +=1
-
-           # print(f"Agentes infectados despues de la propagacion: {count}")
             
+            otros = {}
             # 2️⃣ Progresar la infección en los agentes
-            logger.info("Agentes infectados de Agents :")
-            infectados = 0
+            #logger.info("Agentes infectados de Agents :")
+            c = 0
             for agent in self.agents.keys():
                 if self.agents[agent].infection_status['state'] is State.INFECTED:
-                    logger.debug(self.agents[agent])
-                    infectados +=1
-                    self.disease_model.progress_infection(agent,self.agents)
-
-
+                    #logger.debug(self.agents[agent])
+                    c +=1
+                    otros = self.disease_model.progress_infection(agent,self.agents)
 
             
             print(f"Día {day}: Susceptibles={sum(1 for a in self.agents.values() if a.infection_status['state'] == State.SUSCEPTIBLE)}, "
@@ -100,7 +90,7 @@ class DailySimulation:
             
 
             # 3️⃣ Ejecutar las operaciones del sistema de salud
-            #self.healthcare_system.daily_operations(self.agents.values(), self.clusters,sum([len(interactions) for interactions in daily_summary.values()]), day)
+            self.healthcare_system.daily_operations(self.agents.values(), self.clusters,sum([len(interactions) for interactions in daily_summary.values()]), day)
 
             
             

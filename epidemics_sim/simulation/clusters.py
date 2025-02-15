@@ -279,7 +279,7 @@ class CityClusterGenerator:
     def generate_home_clusters(self, agents):
         home_subclusters = []
         household_id_counter = 0  # Contador único para asignar household_id
-        cluster = ClusterWithSubclusters(home_subclusters, "home", ["morning", "night"], interaction_probability=random.uniform(0.8, 1.0))
+        cluster = ClusterWithSubclusters(home_subclusters, "home", ["morning", "night"], interaction_probability=random.uniform(0.7, 0.1))
 
         for municipio, data in self.municipal_data.items():
             municipio_agents = [agent for agent in agents if agent.municipio == municipio]
@@ -555,22 +555,22 @@ class CityClusterGenerator:
     #     print(f"Se generaron {len(cluster.subclusters)} escuelas.")
     #     return cluster
 
-    # def _get_school_sizes(self, num_schools, total_students):
-    #     """Calcula los tamaños de las escuelas basándose en el número de estudiantes y el número de escuelas."""
-    #     if num_schools == 0:
-    #         return []  # Si no hay escuelas, no se puede generar tamaño de escuela
+    def _get_school_sizes(self, num_schools, total_students):
+        """Calcula los tamaños de las escuelas basándose en el número de estudiantes y el número de escuelas."""
+        if num_schools == 0:
+            return []  # Si no hay escuelas, no se puede generar tamaño de escuela
         
-    #     avg_size = total_students // num_schools  # Tamaño promedio de la escuela
-    #     remaining_students = total_students % num_schools  # Estudiantes restantes por distribuir
+        avg_size = total_students // num_schools  # Tamaño promedio de la escuela
+        remaining_students = total_students % num_schools  # Estudiantes restantes por distribuir
 
-    #     # Inicializamos los tamaños de las escuelas
-    #     school_sizes = [avg_size for _ in range(num_schools)]
+        # Inicializamos los tamaños de las escuelas
+        school_sizes = [avg_size for _ in range(num_schools)]
 
-    #     # Distribuir los estudiantes restantes de manera uniforme entre las escuelas
-    #     for i in range(remaining_students):
-    #         school_sizes[i % num_schools] += 1
+        # Distribuir los estudiantes restantes de manera uniforme entre las escuelas
+        for i in range(remaining_students):
+            school_sizes[i % num_schools] += 1
 
-    #     return school_sizes
+        return school_sizes
 
 
 

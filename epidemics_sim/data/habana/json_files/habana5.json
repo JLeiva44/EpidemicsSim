@@ -1,0 +1,492 @@
+{
+    "municipios": {
+        "PLAYA": {
+            "population": {
+                "total_population": 180567,
+                "VARONES": 82750,
+                "HEMBRAS": 97817,
+                "Habitantes_por_edad": {
+                    "0-15": 27385,
+                    "16-59": 112974,
+                    "60 y +": 40208
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.89,
+            "Escuelas": {
+                "Círculos infantiles": 33,
+                "Primaria": 39,
+                "Media": 24,
+                "Secundaria básica": 16,
+                "Preuniversitario": 3,
+                "Técnica y profesional": 5
+            },
+            "Centros_Laborales": 954,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 45227,
+                    "Mujeres": 42274
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 22569,
+                    "Mujeres": 36493
+                }
+            }
+        },
+        "PLAZA DE LA REVOLUCION": {
+            "population": {
+                "total_population": 148117,
+                "VARONES": 66656,
+                "HEMBRAS": 81461,
+                "Habitantes_por_edad": {
+                    "0-15": 19448,
+                    "16-59": 89159,
+                    "60 y +": 39510
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.7,
+            "Escuelas": {
+                "Círculos infantiles": 32,
+                "Primaria": 30,
+                "Media": 20,
+                "Secundaria básica": 13,
+                "Preuniversitario": 3,
+                "Técnica y profesional": 4
+            },
+            "Centros_Laborales": 850,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 32101,
+                    "Mujeres": 29619
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 16965,
+                    "Mujeres": 29515
+                }
+            }
+        },
+        "CENTRO HABANA": {
+            "population": {
+                "total_population": 143336,
+                "VARONES": 64059,
+                "HEMBRAS": 79277,
+                "Habitantes_por_edad": {
+                    "0-15": 20443,
+                    "16-59": 91187,
+                    "60 y +": 31706
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.68,
+            "Escuelas": {
+                "Círculos infantiles": 20,
+                "Primaria": 19,
+                "Media": 11,
+                "Secundaria básica": 7,
+                "Preuniversitario": 1,
+                "Técnica y profesional": 3
+            },
+            "Centros_Laborales": 303,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 35096,
+                    "Mujeres": 32577
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 16275,
+                    "Mujeres": 26387
+                }
+            }
+        },
+        "LA HABANA VIEJA": {
+            "population": {
+                "total_population": 91066,
+                "VARONES": 44298,
+                "HEMBRAS": 46768,
+                "Habitantes_por_edad": {
+                    "0-15": 15045,
+                    "16-59": 62056,
+                    "60 y +": 13965
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.86,
+            "Escuelas": {
+                "Círculos infantiles": 12,
+                "Primaria": 18,
+                "Media": 11,
+                "Secundaria básica": 8,
+                "Preuniversitario": 1,
+                "Técnica y profesional": 2
+            },
+            "Centros_Laborales": 265,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 22002,
+                    "Mujeres": 19798
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 10308,
+                    "Mujeres": 15319
+                }
+            }
+        },
+        "REGLA": {
+            "population": {
+                "total_population": 42892,
+                "VARONES": 20673,
+                "HEMBRAS": 22219,
+                "Habitantes_por_edad": {
+                    "0-15": 7421,
+                    "16-59": 28815,
+                    "60 y +": 6656
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.97,
+            "Escuelas": {
+                "Círculos infantiles": 9,
+                "Primaria": 9,
+                "Media": 7,
+                "Secundaria básica": 4,
+                "Preuniversitario": 1,
+                "Técnica y profesional": 2
+            },
+            "Centros_Laborales": 67,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 11680,
+                    "Mujeres": 10908
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 6176,
+                    "Mujeres": 8609
+                }
+            }
+        },
+        "LA HABANA DEL ESTE": {
+            "population": {
+                "total_population": 173885,
+                "VARONES": 86186,
+                "HEMBRAS": 87699,
+                "Habitantes_por_edad": {
+                    "0-15": 28190,
+                    "16-59": 116144,
+                    "60 y +": 29551
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 3.04,
+            "Escuelas": {
+                "Círculos infantiles": 31,
+                "Primaria": 25,
+                "Media": 21,
+                "Secundaria básica": 14,
+                "Preuniversitario": 3,
+                "Técnica y profesional": 4
+            },
+            "Centros_Laborales": 271,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 44044,
+                    "Mujeres": 41582
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 25085,
+                    "Mujeres": 35844
+                }
+            }
+        },
+        "GUANABACOA": {
+            "population": {
+                "total_population": 112957,
+                "VARONES": 55495,
+                "HEMBRAS": 57462,
+                "Habitantes_por_edad": {
+                    "0-15": 20966,
+                    "16-59": 74575,
+                    "60 y +": 17416
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.99,
+            "Escuelas": {
+                "Círculos infantiles": 17,
+                "Primaria": 33,
+                "Media": 14,
+                "Secundaria básica": 10,
+                "Preuniversitario": 2,
+                "Técnica y profesional": 2
+            },
+            "Centros_Laborales": 211,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 34913,
+                    "Mujeres": 32658
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 19031,
+                    "Mujeres": 25919
+                }
+            }
+        },
+        "SAN MIGUEL DEL PADRON": {
+            "population": {
+                "total_population": 163988,
+                "VARONES": 74945,
+                "HEMBRAS": 89043,
+                "Habitantes_por_edad": {
+                    "0-15": 29936,
+                    "16-59": 100879,
+                    "60 y +": 33173
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.91,
+            "Escuelas": {
+                "Círculos infantiles": 17,
+                "Primaria": 42,
+                "Media": 14,
+                "Secundaria básica": 10,
+                "Preuniversitario": 2,
+                "Técnica y profesional": 2
+            },
+            "Centros_Laborales": 188,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 44589,
+                    "Mujeres": 41657
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 22818,
+                    "Mujeres": 31132
+                }
+            }
+        },
+        "DIEZ DE OCTUBRE": {
+            "population": {
+                "total_population": 207403,
+                "VARONES": 96038,
+                "HEMBRAS": 111365,
+                "Habitantes_por_edad": {
+                    "0-15": 31575,
+                    "16-59": 130766,
+                    "60 y +": 45062
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.87,
+            "Escuelas": {
+                "Círculos infantiles": 38,
+                "Primaria": 45,
+                "Media": 25,
+                "Secundaria básica": 17,
+                "Preuniversitario": 4,
+                "Técnica y profesional": 4
+            },
+            "Centros_Laborales": 363,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 49485,
+                    "Mujeres": 47361
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 26654,
+                    "Mujeres": 42122
+                }
+            }
+        },
+        "CERRO": {
+            "population": {
+                "total_population": 128361,
+                "VARONES": 58400,
+                "HEMBRAS": 69961,
+                "Habitantes_por_edad": {
+                    "0-15": 19628,
+                    "16-59": 80174,
+                    "60 y +": 28559
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.86,
+            "Escuelas": {
+                "Círculos infantiles": 21,
+                "Primaria": 24,
+                "Media": 17,
+                "Secundaria básica": 11,
+                "Preuniversitario": 2,
+                "Técnica y profesional": 3
+            },
+            "Centros_Laborales": 292,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 32126,
+                    "Mujeres": 30596
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 16840,
+                    "Mujeres": 25689
+                }
+            }
+        },
+        "MARIANAO": {
+            "population": {
+                "total_population": 134957,
+                "VARONES": 62507,
+                "HEMBRAS": 72450,
+                "Habitantes_por_edad": {
+                    "0-15": 21919,
+                    "16-59": 86515,
+                    "60 y +": 26523
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.92,
+            "Escuelas": {
+                "Círculos infantiles": 17,
+                "Primaria": 25,
+                "Media": 14,
+                "Secundaria básica": 9,
+                "Preuniversitario": 2,
+                "Técnica y profesional": 3
+            },
+            "Centros_Laborales": 208,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 36933,
+                    "Mujeres": 33848
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 18118,
+                    "Mujeres": 26724
+                }
+            }
+        },
+        "LA LISA": {
+            "population": {
+                "total_population": 135791,
+                "VARONES": 64615,
+                "HEMBRAS": 71176,
+                "Habitantes_por_edad": {
+                    "0-15": 23632,
+                    "16-59": 87100,
+                    "60 y +": 25059
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 3.03,
+            "Escuelas": {
+                "Círculos infantiles": 20,
+                "Primaria": 26,
+                "Media": 18,
+                "Secundaria básica": 13,
+                "Preuniversitario": 2,
+                "Técnica y profesional": 3
+            },
+            "Centros_Laborales": 237,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 40703,
+                    "Mujeres": 37998
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 21365,
+                    "Mujeres": 29932
+                }
+            }
+        },
+        "BOYEROS": {
+            "population": {
+                "total_population": 206732,
+                "VARONES": 95200,
+                "HEMBRAS": 111532,
+                "Habitantes_por_edad": {
+                    "0-15": 36180,
+                    "16-59": 128079,
+                    "60 y +": 42473
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 3.3,
+            "Escuelas": {
+                "Círculos infantiles": 35,
+                "Primaria": 50,
+                "Media": 33,
+                "Secundaria básica": 23,
+                "Preuniversitario": 2,
+                "Técnica y profesional": 6
+            },
+            "Centros_Laborales": 490,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 56009,
+                    "Mujeres": 50727
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 29916,
+                    "Mujeres": 39760
+                }
+            }
+        },
+        "ARROYO NARANJO": {
+            "population": {
+                "total_population": 208554,
+                "VARONES": 101476,
+                "HEMBRAS": 107078,
+                "Habitantes_por_edad": {
+                    "0-15": 38631,
+                    "16-59": 136838,
+                    "60 y +": 33085
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 3.06,
+            "Escuelas": {
+                "Círculos infantiles": 32,
+                "Primaria": 47,
+                "Media": 24,
+                "Secundaria básica": 16,
+                "Preuniversitario": 4,
+                "Técnica y profesional": 4
+            },
+            "Centros_Laborales": 299,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 57290,
+                    "Mujeres": 51936
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 30347,
+                    "Mujeres": 41133
+                }
+            }
+        },
+        "COTORRO": {
+            "population": {
+                "total_population": 75848,
+                "VARONES": 37332,
+                "HEMBRAS": 38516,
+                "Habitantes_por_edad": {
+                    "0-15": 13665,
+                    "16-59": 50272,
+                    "60 y +": 11911
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 3.03,
+            "Escuelas": {
+                "Círculos infantiles": 17,
+                "Primaria": 23,
+                "Media": 12,
+                "Secundaria básica": 6,
+                "Preuniversitario": 2,
+                "Técnica y profesional": 4
+            },
+            "Centros_Laborales": 156,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 22104,
+                    "Mujeres": 20445
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 12192,
+                    "Mujeres": 16684
+                }
+            }
+        }
+    },
+    "Comorbilidades": {
+        "hipertension_arterial": 250.1,
+        "asma": 104.1,
+        "diabetes": 79.8,
+        "enfermedad_cerebrovascular": 8.6
+    },
+    "total_empresas": 515,
+    "total_tiendas": 101
+}

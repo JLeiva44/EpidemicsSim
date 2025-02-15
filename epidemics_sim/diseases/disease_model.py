@@ -172,6 +172,10 @@ class DiseaseModel(ABC):
 
         :param agent: The agent whose infection state is being progressed.
         """
+        result = {
+            'deceased':0,
+            'recovered':0
+        }
         if agents[agent].infection_status["days_infected"] == 0 and not agents[agent].initial:
             # incubation_period = random.gauss(self.mean_incubation_period[0], self.mean_incubation_period[1])
             incubation_period = round(random.gauss(self.mean_incubation_period[0], self.mean_incubation_period[1]))
@@ -250,6 +254,7 @@ class DiseaseModel(ABC):
                     "contagious": False,
                     "severity": "critical"
                 })
+                result['deceased'] += 1
                 agents[agent].transition(State.DECEASED, reason=f"{self.name} critical condition")
                 return  # 🚨 agents[agent]e murió, no sigue en la simulación
 
@@ -261,6 +266,7 @@ class DiseaseModel(ABC):
                     "severity": None,
                     "days_infected": 0,
                 })
+                result['recovered'] +=1
                 agents[agent].transition(State.RECOVERED, reason=f"{self.name} recovery")
 
                 # 3.3️⃣ ¿La inmunidad es temporal?
@@ -286,6 +292,7 @@ class DiseaseModel(ABC):
                 })
                 agents[agent].transition(State.SUSCEPTIBLE, reason=f"{self.name} immunity waned")
                 agents[agent].immune = False  
+        return result        
 
     # def progress_infection(self, agent, agents):
     #     """
