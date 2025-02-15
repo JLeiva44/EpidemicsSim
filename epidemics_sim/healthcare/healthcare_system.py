@@ -153,7 +153,7 @@ class HealthcareSystem:
         #             self.municipality_data[municipio] = 0
         #         self.municipality_data[municipio] += 1
 
-        self.analyzer.record_daily_stats(self.daily_stats["new_cases"], self.daily_stats["new_deaths"], self.municipality_data["infected"])
+        self.analyzer.record_daily_stats(self.daily_stats["new_cases"], self.daily_stats["new_deaths"],self.municipality_diary_data["infected"], self.municipality_data["infected"])
         self.daily_cases.append(self.daily_stats["new_cases"])
         self.daily_deaths.append(self.daily_stats["new_deaths"])
 
@@ -163,10 +163,11 @@ class HealthcareSystem:
             self.daily_deaths.pop(0)
 
         # Actualizar lista de hospitalizados
-        for agent in self.hospitalized :
+        for agent in self.hospitalized[:]:  
             if agent.infection_status["state"] is not State.INFECTED:
                 agent.is_hospitalized = False
-                self.hospitalized.pop(agent)
+                index = self.hospitalized.index(agent)  # Obtenemos el índice del agente
+                self.hospitalized.pop(index)  # Eliminamos el agente usando su índice
 
         # Priorizar casos críticos y graves para hospitalización
         prioritized_cases = sorted(
@@ -277,15 +278,36 @@ class HealthcareSystem:
         print(daily_report)
 
         # Verificar si la política de vacunación está activa y continuar vacunando progresivamente
-        if self.active_policies.get(VaccinationPolicy, False):
-            for policy in self.policies:
-                if isinstance(policy, VaccinationPolicy):
-                    total_vaccination = policy.enforce(agents, clusters)  # Continúa vacunando
-                    if total_vaccination:
-                        self.remove_policies(agents, clusters, VaccinationPolicy)
+        # if self.active_policies.get(VaccinationPolicy, False):
+        #     for policy in self.policies:
+        #         if isinstance(policy, VaccinationPolicy):
+        #             total_vaccination = policy.enforce(agents, clusters)  # Continúa vacunando
+        #             if total_vaccination:
+        #                 self.remove_policies(agents, clusters, VaccinationPolicy)
 
-        # Evaluar políticas cada 7 días
-        self.evaluate_policies(agents, clusters, day)
+        # # Evaluar políticas cada 7 días
+        # self.evaluate_policies(agents, clusters, day)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # import random
 # from epidemics_sim.healthcare.last import SimulationAnalyzer
 # from epidemics_sim.policies.vaccination_policy import VaccinationPolicy

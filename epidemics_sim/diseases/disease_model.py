@@ -76,7 +76,10 @@ class DiseaseModel(ABC):
             for id1, id2 in interactions:  # Each interaction is a tuple (agent1, agent2)
                 count_interaction += 1
                 if agents[id1].is_isolated or agents[id2].is_isolated or agents[id1].is_hospitalized or agents[id2].is_hospitalized:
-                    print("Estan llegando agentes isolados u hospitalizados a la propagacion")
+                    continue
+                if agents[id1].infection_status["state"] is State.DECEASED or agents[id1].infection_status["state"] is State.DECEASED:
+                    print("estan llegando muertos a la propagacion")
+                    continue
                 # Aqui no deben llegar agentes isolados u hospitalizados porque los quito de las interaciones en simulate_day
                 #logger.info("Agentes que se infestaron dentro de propagate")
                 if agents[id1].infection_status["state"] is State.INFECTED and agents[id1].infection_status["contagious"] and (agents[id2].infection_status["state"] is State.SUSCEPTIBLE or agents[id2].infection_status["state"] is State.RECOVERED) and not agents[id2].immune:
@@ -218,8 +221,8 @@ class DiseaseModel(ABC):
             recovery_days = random.randint(5, 10)  # Recuperación más rápida
 
         # 💡 Bonus de recuperación si está hospitalizado
-        recovery_bonus = 1.3 if agents[agent].is_hospitalized else 1.0  
-
+        recovery_bonus = 1.15 if agents[agent].is_hospitalized else 1.0  
+        #recovery_bonus = 1
         # Probabilidad base de progresión según severidad
         # progression_rates = {
         #     "asymptomatic": 0,
@@ -232,10 +235,11 @@ class DiseaseModel(ABC):
         mortality_risk = self.calculate_critical_mortality_rate(agents[agent].mortality_rate)
 
         # 📌 **Nueva Fórmula**: Probabilidad combinada usando logaritmo
-        progression_probability = self.progression_rates.get(severity, 0) * math.log(1 + agents[agent].mortality_rate * 10)
-
+        #progression_probability = self.progression_rates.get(severity, 0) * math.log(1 + agents[agent].mortality_rate * 10)
+        progression_probability = self.progression_rates.get(severity,0)
         # Evaluar si el paciente empeora
-        if severity in self.progression_rates and random.random() < progression_probability:
+        r = random.random()
+        if severity in self.progression_rates and r < progression_probability:
             new_severity = {
                 "mild": "moderate",
                 "moderate": "severe",
@@ -246,9 +250,12 @@ class DiseaseModel(ABC):
             return
 
         # 4️⃣ Evaluar recuperación o muerte
-        if days_infected >= agents[agent].incubation_period + recovery_days:
+        #if days_infected >= agents[agent].incubation_period + recovery_days:
             # 🚨 CASOS CRÍTICOS: Posibilidad de muerte
-            if severity == "critical" and random.random() < (mortality_risk / recovery_bonus):
+        r = random.random()
+        if severity == "critical":
+            mort = mortality_risk/recovery_bonus
+            if r < mort:
                 agents[agent].infection_status.update({
                     "state": State.DECEASED,
                     "contagious": False,
@@ -257,6 +264,8 @@ class DiseaseModel(ABC):
                 result['deceased'] += 1
                 agents[agent].transition(State.DECEASED, reason=f"{self.name} critical condition")
                 return  # 🚨 agents[agent]e murió, no sigue en la simulación
+
+        if days_infected >= agents[agent].incubation_period + recovery_days:
 
             # ✅ RECUPERACIÓN: Puede ser inmune o volver a ser susceptible
             if random.random() < (self.recovery_rates.get(severity, 1.0) * recovery_bonus):
@@ -385,11 +394,12 @@ class DiseaseModel(ABC):
         :param vaccine_efficacy: Reduction in mortality due to vaccination (0 to 1). Default is 0 (no vaccination).
         """
         # Combine using the log-based formula
-        combined_rate = 1 - (1 - agent_mortality_rate) * (1 - self.base_mortality_rate)
+        #combined_rate = 1 - (1 - agent_mortality_rate) * (1 - self.base_mortality_rate)
+        combined_rate = agent_mortality_rate + self.base_mortality_rate - (agent_mortality_rate * self.base_mortality_rate)
 
-        # # Apply vaccine efficacy if vaccinated
+        # Apply vaccine efficacy if vaccinated
         # if self.vaccinated:
-        #     combined_rate *= (1 - vaccine_efficacy)
+        #     combined_rate *= (1 - self.vaccine_efficacy)
 
         #self.mortality_rate = combined_rate
         return combined_rate

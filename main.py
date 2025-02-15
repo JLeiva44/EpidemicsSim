@@ -6,7 +6,7 @@ demographics = {}
 covid = {}
 # Abre el archivo JSON
 with open('epidemics_sim/data/habana/json_files/tets.json', 'r') as archivo:
-    # Cargar los datos del archivo en un diccionario
+    # Cargar los datos del archivo en un diccionario5
     demographics = json.load(archivo)
 
 with open('epidemics_sim/data/covid/covid.json', 'r') as archivo:
@@ -56,8 +56,8 @@ params = {
         "vaccine_efficacy": 0.8
     }
     },
-    "days" : 15,
-    "initial_infected": 1
+    "days" : 30,
+    "initial_infected": 3
 }
 CONTROLLER = SimulationController(params["demographics"],params["disease"],params["policies_config"],params["days"],params["initial_infected"])
 

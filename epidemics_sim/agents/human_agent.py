@@ -1,7 +1,7 @@
 from epidemics_sim.agents.base_agent import BaseAgent
 from epidemics_sim.agents.base_agent import State
 import random
-
+import math
 class HumanAgent(BaseAgent):
     def __init__(
         self, agent_id, age, gender, occupation, household_id, municipio, disease_model,
@@ -59,30 +59,56 @@ class HumanAgent(BaseAgent):
             }
 
 
+    import math
+
     def _calculate_base_mortality_rate(self):
-        """
-        Calculate the agent's base mortality rate based on their biological age.
+            """
+            Calculate the agent's base mortality rate based on their biological age,
+            following an exponential growth model.
 
-        Biological age is defined as:
-        biological_age = historical_age + 5 * (# of comorbidities)
+            Biological age is estimated as:
+                biological_age = age + 5 * (# of comorbidities)
+            
+            Base mortality rate is modeled as an exponential function:
+                base_mortality_rate = 10^(-5) * e^((biological_age - 30) / 20)
+            
+            This ensures a gradual increase in mortality rather than discrete jumps.
 
-        The base mortality rate is then derived from this biological age:
-        - 0-30 years: 0.01%
-        - 31-50 years: 0.1%
-        - 51-70 years: 1%
-        - 71+ years: 5%
+            :return: Base mortality rate as a decimal.
+            """
+            biological_age = self.age + 5 * len(self.comorbidities)
 
-        :return: Base mortality rate as a decimal.
-        """
-        biological_age = self.age + 5 * len(self.comorbidities)
-        if biological_age <= 30:
-            return 0.00001  # 0.001%
-        elif biological_age <= 50:
-            return 0.0001   # 0.01%
-        elif biological_age <= 70:
-            return 0.001    # 0.1%
-        else:
-            return 0.01 # 1%
+            # Exponential function to model mortality increase
+            base_mortality_rate = max(0, 0.001 * (biological_age - 30))  #= 1e-5 * math.exp((biological_age - 30) / 20)
+
+
+            # Cap the mortality rate at a realistic max (e.g., 20% for extreme ages)
+            return  base_mortality_rate#min(base_mortality_rate, 0.2)
+
+    # def _calculate_base_mortality_rate(self):
+    #     """
+    #     Calculate the agent's base mortality rate based on their biological age.
+
+    #     Biological age is defined as:
+    #     biological_age = historical_age + 5 * (# of comorbidities)
+
+    #     The base mortality rate is then derived from this biological age:
+    #     - 0-30 years: 0.01%
+    #     - 31-50 years: 0.1%
+    #     - 51-70 years: 1%
+    #     - 71+ years: 5%
+
+    #     :return: Base mortality rate as a decimal.
+    #     """
+    #     biological_age = self.age + 5 * len(self.comorbidities)
+    #     if biological_age <= 30:
+    #         return 0.00001  # 0.001%
+    #     elif biological_age <= 50:
+    #         return 0.0001   # 0.01%
+    #     elif biological_age <= 70:
+    #         return 0.001    # 0.1%
+    #     else:
+    #         return 0.01 # 1%
 
     
 

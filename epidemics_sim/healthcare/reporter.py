@@ -19,19 +19,21 @@ class SimulationAnalyzer:
         self.municipal_data = {}   # Diccionario para almacenar datos diarios por municipio
         self.real_data = None  # Datos reales cargados desde un archivo JSON
 
-    def record_daily_stats(self, new_cases, new_deaths, municipality_data):
+    def record_daily_stats(self, new_cases, new_deaths,municipality_diary_data, municipality_accumulative__data):
         self.total_cases += new_cases
         self.total_deaths += new_deaths
         self.daily_cases.append(new_cases)
         self.daily_deaths.append(new_deaths)
         
+        # self.municipal_cases.update(municipality_diary_data)
+        # self.municipal_data.update(municipality_accumulative__data)
         # Actualizar casos por municipio
-        for municipality, cases in municipality_data.items():
+        for municipality, cases in municipality_diary_data.items():
             if municipality not in self.municipal_cases:
                 self.municipal_cases[municipality] = 0
                 self.municipal_data[municipality] = []
-            self.municipal_cases[municipality]  = municipality_data[municipality]
-            #self.municipal_data[municipality].append(cases)
+            self.municipal_cases[municipality]  += municipality_diary_data[municipality]
+            self.municipal_data[municipality].append(cases)
 
         stats = {
             "day": len(self.daily_cases),
@@ -45,22 +47,30 @@ class SimulationAnalyzer:
         if len(self.daily_cases) % 10 == 0:
             self.report_data.append(stats)
     
-    def load_real_data(self, json_file, start_day=1, end_day=30):
+    def load_real_data(self, json_file, json_deaths, start_day=7, end_day=37):
         """
         Carga datos reales desde un archivo JSON y permite seleccionar un rango de días.
+        Los casos de muertes se toman del archivo json_deaths y solo se consideran los datos de La Habana.
         
-        :param json_file: Ruta al archivo JSON con los datos reales.
-        :param start_day: Día inicial del rango (por defecto 1).
-        :param end_day: Día final del rango (por defecto None, que significa hasta el último día).
+        :param json_file: Ruta al archivo JSON con los datos reales de casos.
+        :param json_deaths: Ruta al archivo JSON con los datos reales de muertes.
+        :param start_day: Día inicial del rango (por defecto 7).
+        :param end_day: Día final del rango (por defecto 37).
         """
         with open(json_file, "r") as file:
             data = json.load(file)
-            #data = data["casos"]
+        
+        with open(json_deaths, "r") as file:
+            deaths = json.load(file)
         
         # Filtrar datos por rango de días
         days = data["casos"]["dias"]
         filtered_days = {day: day_data for day, day_data in days.items() 
-                         if start_day <= int(day) <= (end_day if end_day else float('inf'))}
+                        if start_day <= int(day) <= (end_day if end_day else float('inf'))}
+        
+        death_days = deaths["casos"]["dias"]
+        filtered_death_days = {day: day_data for day, day_data in death_days.items() 
+                        if start_day <= int(day) <= (end_day if end_day else float('inf'))}
         
         # Procesar datos filtrados
         self.real_data = {
@@ -71,7 +81,8 @@ class SimulationAnalyzer:
         }
         
         for day, day_data in filtered_days.items():
-            diagnosticados ={}
+            # Procesar casos
+            diagnosticados = {}
             sin_casos = False
             try:
                 day_data["diagnosticados"]
@@ -82,15 +93,74 @@ class SimulationAnalyzer:
                 casos_habana = [caso for caso in day_data["diagnosticados"] 
                                 if caso["dpacode_provincia_deteccion"] == "23"]
                 nuevos_casos = len(casos_habana)
-                muertes = day_data.get("muertes_numero", 0)
             else:
                 nuevos_casos = 0
-                muertes = day_data.get("muertes_numero", 0)
             
+            # Procesar muertes desde json_deaths
+            muertes = 0
+            if day in filtered_death_days:
+                fallecidos = filtered_death_days[day].get("fallecidos", [])
+                muertes_habana = [fallecido for fallecido in fallecidos 
+                                if fallecido["dpacode_provincia_deteccion"] == "23"]
+                muertes = len(muertes_habana)
+            
+            # Actualizar datos
             self.real_data["daily_cases"].append(nuevos_casos)
             self.real_data["daily_deaths"].append(muertes)
             self.real_data["total_cases"].append(sum(self.real_data["daily_cases"]))
             self.real_data["total_deaths"].append(sum(self.real_data["daily_deaths"]))
+    # def load_real_data(self, json_file,json_deaths, start_day=7, end_day=37):
+    #     """
+    #     Carga datos reales desde un archivo JSON y permite seleccionar un rango de días.
+        
+    #     :param json_file: Ruta al archivo JSON con los datos reales.
+    #     :param start_day: Día inicial del rango (por defecto 1).
+    #     :param end_day: Día final del rango (por defecto None, que significa hasta el último día).
+    #     """
+    #     with open(json_file, "r") as file:
+    #         data = json.load(file)
+    #         #data = data["casos"]
+    #     with open(json_deaths,"r") as file:
+    #         deaths = json.load(file)
+        
+    #     # Filtrar datos por rango de días
+    #     days = data["casos"]["dias"]
+    #     filtered_days = {day: day_data for day, day_data in days.items() 
+    #                      if start_day <= int(day) <= (end_day if end_day else float('inf'))}
+        
+    #     death_days = deaths["casos"]["dias"]
+    #     filtered_death_days = {day: day_data for day, day_data in death_days.items() 
+    #                      if start_day <= int(day) <= (end_day if end_day else float('inf'))}
+        
+    #     # Procesar datos filtrados
+    #     self.real_data = {
+    #         "daily_cases": [],
+    #         "daily_deaths": [],
+    #         "total_cases": [],
+    #         "total_deaths": []
+    #     }
+        
+    #     for day, day_data in filtered_days.items():
+    #         diagnosticados ={}
+    #         sin_casos = False
+    #         try:
+    #             day_data["diagnosticados"]
+    #         except KeyError:
+    #             sin_casos = True
+            
+    #         if not sin_casos:
+    #             casos_habana = [caso for caso in day_data["diagnosticados"] 
+    #                             if caso["dpacode_provincia_deteccion"] == "23"]
+    #             nuevos_casos = len(casos_habana)
+    #             muertes = day_data.get("muertes_numero", 0)
+    #         else:
+    #             nuevos_casos = 0
+    #             muertes = day_data.get("muertes_numero", 0)
+            
+    #         self.real_data["daily_cases"].append(nuevos_casos)
+    #         self.real_data["daily_deaths"].append(muertes)
+    #         self.real_data["total_cases"].append(sum(self.real_data["daily_cases"]))
+    #         self.real_data["total_deaths"].append(sum(self.real_data["daily_deaths"]))
 
     def plot_cases(self):
         """
@@ -321,21 +391,21 @@ class SimulationAnalyzer:
             file.write(html_content)
         print(f"HTML report saved as {filename}")
 
-    def plot_municipality_comparison(self):
-        df = pd.DataFrame(list(self.municipal_cases.items()), columns=["Municipality", "Cases"])
-        # Cambiar px.bar por px.line
-        fig = px.line(df, x='Municipality', y='Cases', title='Comparación de Casos por Municipio', 
-                    labels={'Cases': 'Casos Acumulados'}, markers=True)
-        fig.update_layout(template="plotly_white", xaxis_title="Municipio", yaxis_title="Casos Acumulados")
-        fig.write_html("epidemics_sim/results/municipality_comparison.html")
-        print("Municipality comparison chart saved as municipality_comparison.html")
     # def plot_municipality_comparison(self):
     #     df = pd.DataFrame(list(self.municipal_cases.items()), columns=["Municipality", "Cases"])
-    #     fig = px.bar(df, x='Municipality', y='Cases', title='Comparación de Casos por Municipio', 
-    #                  labels={'Cases': 'Casos Acumulados'}, color='Cases', color_continuous_scale='Viridis')
+    #     # Cambiar px.bar por px.line
+    #     fig = px.line(df, x='Municipality', y='Cases', title='Comparación de Casos por Municipio', 
+    #                 labels={'Cases': 'Casos Acumulados'}, markers=True)
     #     fig.update_layout(template="plotly_white", xaxis_title="Municipio", yaxis_title="Casos Acumulados")
     #     fig.write_html("epidemics_sim/results/municipality_comparison.html")
     #     print("Municipality comparison chart saved as municipality_comparison.html")
+    def plot_municipality_comparison(self):
+        df = pd.DataFrame(list(self.municipal_cases.items()), columns=["Municipality", "Cases"])
+        fig = px.bar(df, x='Municipality', y='Cases', title='Comparación de Casos por Municipio', 
+                     labels={'Cases': 'Casos Acumulados'}, color='Cases', color_continuous_scale='Viridis')
+        fig.update_layout(template="plotly_white", xaxis_title="Municipio", yaxis_title="Casos Acumulados")
+        fig.write_html("epidemics_sim/results/municipality_comparison.html")
+        print("Municipality comparison chart saved as municipality_comparison.html")
 
     def plot_municipality_interactive(self):
         # Crear un DataFrame con los datos diarios de cada municipio
@@ -362,7 +432,7 @@ class SimulationAnalyzer:
         fig.write_html("epidemics_sim/results/municipality_interactive.html")
         print("Interactive municipality comparison chart saved as municipality_interactive.html")
 
-    def generate_full_report(self, json_file='epidemics_sim/data/cuba_covid_data/covid19-cuba-old.json', start_day=1, end_day=30):
+    def generate_full_report(self, json_file='epidemics_sim/data/cuba_covid_data/covid19-cuba-old.json',json_deaths ='epidemics_sim/data/cuba_covid_data/covid19-fallecidos.json',  start_day=1, end_day=30):
         """
         Genera un informe completo con todos los gráficos y el reporte HTML.
         
@@ -372,7 +442,7 @@ class SimulationAnalyzer:
         """
         # Cargar datos reales si se proporciona un archivo JSON
         if json_file:
-            self.load_real_data(json_file, start_day = 6, end_day = 36)
+            self.load_real_data(json_file,json_deaths, start_day = 6, end_day = 36)
         
         # Generar todos los gráficos
         self.plot_cases()

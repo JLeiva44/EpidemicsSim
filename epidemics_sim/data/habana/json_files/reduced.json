@@ -1,0 +1,74 @@
+{
+    "municipios": {
+        "REGLA": {
+            "population": {
+                "total_population": 21446,
+                "VARONES": 10336,
+                "HEMBRAS": 11109,
+                "Habitantes_por_edad": {
+                    "0-15": 3710,
+                    "60 y +": 3328
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 2.97,
+            "Escuelas": {
+                "Círculos infantiles": 9,
+                "Primaria": 9,
+                "Media": 7,
+                "Secundaria básica": 4,
+                "Preuniversitario": 1,
+                "Técnica y profesional": 2
+            },
+            "Centros_Laborales": 67,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 5840,
+                    "Mujeres": 5454
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 3088,
+                    "Mujeres": 4304
+                }
+            }
+        },
+        "COTORRO": {
+            "population": {
+                "total_population": 37924,
+                "VARONES": 18666,
+                "HEMBRAS": 19258,
+                "Habitantes_por_edad": {
+                    "0-15": 6832,
+                    "60 y +": 5955
+                }
+            },
+            "Promedio de Personas por Unidad de Alojamiento": 3.03,
+            "Escuelas": {
+                "Círculos infantiles": 17,
+                "Primaria": 23,
+                "Media": 12,
+                "Secundaria básica": 6,
+                "Preuniversitario": 2,
+                "Técnica y profesional": 4
+            },
+            "Centros_Laborales": 156,
+            "Poblacion_Edad_Laboral": {
+                "Edad_Laboral": {
+                    "Hombres": 11052,
+                    "Mujeres": 10222
+                },
+                "Fuera_Edad_Laboral": {
+                    "Hombres": 6096,
+                    "Mujeres": 8342
+                }
+            }
+        }
+    },
+    "Comorbilidades": {
+        "hipertension_arterial": 250.1,
+        "asma": 104.1,
+        "diabetes": 79.8,
+        "enfermedad_cerebrovascular": 8.6
+    },
+    "total_empresas": 515,
+    "total_tiendas": 101
+}

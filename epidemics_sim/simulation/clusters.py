@@ -42,18 +42,45 @@ class Subcluster:
             agent1 = self.graph.nodes[edge[0]]['agent']
             agent2 = self.graph.nodes[edge[1]]['agent']
             
-            if self.cluster.cluster_type == "shopping":
-                if agents[agent1.agent_id].infection_status['state'] == State.DECEASED or agents[agent1.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated:
-                    to_update.append(agent1)
+            # if self.cluster.cluster_type == "shopping":
+            #     try:
+            #         if (agents[agent1.agent_id].infection_status['state'] == State.DECEASED or 
+            #             agents[agent1.agent_id].is_hospitalized or 
+            #             agents[agent1.agent_id].is_isolated):
+            #             to_update.append(agent1)
+            #             continue
+            #     except KeyError:
+            #         # Si el agente no existe en el diccionario, se asume que está muerto
+            #         continue
+
+            #     try:
+            #         if (agents[agent2.agent_id].infection_status['state'] == State.DECEASED or 
+            #             agents[agent2.agent_id].is_hospitalized or 
+            #             agents[agent2.agent_id].is_isolated):
+            #             to_update.append(agent2)
+            #             continue
+            #     except KeyError:
+            #         continue
+
+            try:
+                if (agents[agent1.agent_id].infection_status["state"] == State.DECEASED or 
+                    agents[agent2.agent_id].infection_status["state"] == State.DECEASED):
                     continue
-                elif agents[agent2.agent_id].infection_status['state'] == State.DECEASED or agents[agent2.agent_id].is_hospitalized or agents[agent2.agent_id].is_isolated:
-                    to_update.append(agent2)
-                    continue    
-            if agents[agent1.agent_id].infection_status["state"] == State.DECEASED or agents[agent2.agent_id].infection_status["state"] == State.DECEASED:
+            except KeyError:
                 continue
 
-            if agents[agent1.agent_id].is_hospitalized or agents[agent2.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated or agents[agent2.agent_id].is_isolated:
-                continue
+            # if self.cluster.cluster_type == "shopping":
+            #     if agents[agent1.agent_id].infection_status['state'] == State.DECEASED or agents[agent1.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated:
+            #         to_update.append(agent1)
+            #         continue
+            #     elif agents[agent2.agent_id].infection_status['state'] == State.DECEASED or agents[agent2.agent_id].is_hospitalized or agents[agent2.agent_id].is_isolated:
+            #         to_update.append(agent2)
+            #         continue    
+            # if agents[agent1.agent_id].infection_status["state"] == State.DECEASED or agents[agent2.agent_id].infection_status["state"] == State.DECEASED:
+            #     continue
+
+            # if agents[agent1.agent_id].is_hospitalized or agents[agent2.agent_id].is_hospitalized or agents[agent1.agent_id].is_isolated or agents[agent2.agent_id].is_isolated:
+            #     continue
 
             if random.random() < self.cluster.interaction_probability:
                 interactions.append((agent1.agent_id, agent2.agent_id))
@@ -84,9 +111,12 @@ class Subcluster:
             self.agents.append(best_candidate)
             self.graph.add_node(len(self.graph.nodes), agent=best_candidate)
 
-            for neighbor in self.graph.nodes:
+            for neighbor in list(self.graph.nodes):  # Convertimos a lista para evitar modificar el diccionario original
                 if random.random() < 0.5:
                     self.graph.add_edge(len(self.graph.nodes) - 1, neighbor)
+            # for neighbor in self.graph.nodes:
+            #     if random.random() < 0.5:
+            #         self.graph.add_edge(len(self.graph.nodes) - 1, neighbor)
         else:
             print(f"Advertencia: El hogar {agent.household_id} se ha quedado sin representante para comprar.")
 

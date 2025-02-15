@@ -89,6 +89,8 @@ class DailySimulation:
 
             
 
+            
+
             # 3️⃣ Ejecutar las operaciones del sistema de salud
             self.healthcare_system.daily_operations(self.agents.values(), self.clusters,sum([len(interactions) for interactions in daily_summary.values()]), day)
 
