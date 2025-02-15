@@ -1,9 +1,9 @@
 {
     
-        "transmission_rate": 0.6,
+        "transmission_rate": 0.3,
         "incubation_period": [5.1,2],
-        "asymptomatic_probability": 0.4,
-        "base_mortality_rate": 0.02,
+        "asymptomatic_probability": 0.35,
+        "base_mortality_rate": 0.01,
         "immunity_duration": 0,
         "recovery_rates": {
             "asymptomatic": 0.99,
