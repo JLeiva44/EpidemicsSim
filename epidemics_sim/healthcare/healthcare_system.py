@@ -133,7 +133,7 @@ class HealthcareSystem:
             f"Total infectados: {self.cumulative_stats['infected']}\n"
             f"Total recuperados: {self.cumulative_stats['recovered']}\n"
             f"Total fallecidos: {self.cumulative_stats['deceased']}\n"
-            f"Hospitalizados: {self.cumulative_stats['hospitalized']}/{self.cumulative_stats['hospital_capacity']}\n"
+            f"Hospitalizados: {len(self.hospitalized)}/{self.hospital_capacity}\n"
             "==============================="
         )
         return report
